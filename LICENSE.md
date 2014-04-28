@@ -1,7 +1,6 @@
 
-
 	P3-P2P
-	www.ajk.altervista.com
+	ajk.altervista.org
  	
 	Copyright (c) 2014, Alberto Garbui aka AjK
 	All rights reserved.
