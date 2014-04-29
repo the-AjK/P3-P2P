@@ -1,0 +1,237 @@
+/* austintek.css */
+/* Joseph Mack jmack@wm7d.net */
+/* from Bert Bos http://www.w3.org/Style/Examples/011/firstcss */
+body{
+	font-family: Georgia, "Times New Roman", Times, serif;
+	background-color: #FFFFFF;
+}
+
+h1,h2,h3 {
+	font-family: Helvetica, Geneva, Arial, SunSans-Regular, sans-serif;
+}
+
+pre{
+	/*
+	tabs in code count as a single char
+	if you want the box around the code to be correct, you have to convert the tabs to spaces
+	*/
+	border-style: dotted;
+	border-color: #00FFFF;
+	background-color: #FFFFB0;
+	padding: 1em;
+}
+
+div.table{
+	border-style: solid;
+	border-color: #FF0000;
+	background-color: #FFFFFF;
+	padding: 1em;
+	margin-left:auto;
+	margin-right:auto;
+	text-align: center;
+}
+div.note{
+	border-top: 2px dotted #FFFF00;
+	border-bottom: 2px dotted #FFFF00;
+	border-left: 2px dotted #FFFF00;
+	border-right: 2px dotted #FFFF00;
+	background-color: #FFFFFF;
+	padding: 1em;
+}
+div.warning{
+	border-style: solid;
+	border-color: #FF0000;
+	background-color: #FFFFFF;
+	padding: 1em;
+}
+div.figure{
+	/*
+	border-style: solid;
+	border-color: #C0FFFF;
+	border-top: 1px solid silver;
+	border-bottom: 1px solid silver;
+	border-left: 1px solid silver;
+	border-right: 1px solid silver;
+	border-color: red;
+	*/
+	border-top: 1px solid #C0FFFF;
+	border-bottom: 1px solid #C0FFFF;
+	border-left: 1px solid #C0FFFF;
+	border-right: 1px solid #C0FFFF;
+	/*
+	*/
+	background-color: #FFFFFF;
+	margin-left:auto;
+	margin-right:auto;
+	/*
+	*/
+	padding: 1em;
+}
+
+
+blockquote.blockquote{
+	/*
+	border-style: solid;
+	border-color: #E0E0E0;
+	border-top: 1px solid #E0E0FF;
+	border-bottom: 1px solid #E0E0FF;
+	border-left: 1px solid #E0E0FF;
+	border-right: 1px solid #E0E0FF;
+	*/
+	border-top: 1px solid silver;
+	border-bottom: 1px solid silver;
+	border-left: 1px solid silver;
+	border-right: 1px solid silver;
+	background-color: #FFFFFF;
+	padding: 1em;
+}
+
+/*
+	http://snippets.dzone.com/posts/show/7016
+*/
+sup{
+	font-size:xx-small;
+	vertical-align: top;
+}
+
+sub{
+	font-size:xx-small;
+	vertical-align: bottom;
+}
+
+
+.toc{
+	line-height: 100%;
+	color: #0000FF;
+	background-color: #C0FFC0;
+	border: 2px solid green;
+	font-weight: bold;
+	font-family: sans-serif;
+	padding: 1em;
+	margin-top: 1em;
+	margin-bottom: 1em%;
+	margin-left: 5%;
+	/*margin-right: 60%;	#comes from local file*/
+}
+
+.abstract{
+	color: black;
+	background-color: #C0FFFF;
+	border: 1px solid blue;
+	padding: 1em;
+}
+
+/*
+http://webdesign.maratz.com/lab/visited_links_styling/
+*/
+/*
+a:link { text-decoration: none; color: #FFFFFF; }
+*/
+div.toc a:link {
+	color: #0000FF;
+	text-decoration: none;
+	}
+div.toc a:visited {
+	text-decoration: none;
+	padding-right: 12px;
+	background: url(../images/visitedLink.gif) no-repeat 100% 50%;
+	color: #FF0000;
+}
+div.toc a:visited:hover {
+	background-image: url(../images/visitedHoverLink.gif);
+	}
+div.toc a:hover {
+	#color: #AFEEFF;
+	color: #FF00FF;
+	background-color: #FFFFFF;
+	#font-size: 14pt;	#font-size doesn't do anything for firefox on pip
+	}
+div.toc a:active {
+	#the color when you click on it, but before the browser hops to the target
+	text-decoration: none;
+	color: #00FF00;
+	}
+
+
+
+div.mediaobject a:link {
+	color: #0000FF;
+	text-decoration: none;
+	}
+div.mediaobject a:visited { 
+	text-decoration: none; 
+	padding-right: 12px; 
+	background: url(images/visitedLink.gif) no-repeat 100% 50%; 
+	color: #C00000; 
+}
+div.mediaobject a:visited:hover { 
+	background-image: url(images/visitedHoverLink.gif); 
+	}
+div.mediaobject a:hover { 
+	color: #AFEEFF; 
+	}
+div.mediaobject a:active {    
+	/*the color when you click on it, but before the browser hops to the target*/
+	text-decoration: none; 
+	color: #FFFFFF; 
+	}
+
+/*
+div.mediaobject{
+      border-style: solid;
+      border-color: #FF00FF;
+      background-color: #FFFFFF;
+      display: block;
+      margin-left:auto;
+      margin-right:auto;
+      padding: 1em;
+}
+
+img.displayed{
+      border-style: solid;
+      border-color: #FF00FF;
+      background-color: #FFFFFF;
+      display: block;
+      margin-left:auto;
+      margin-right:auto;
+      padding: 1em;
+}
+
+table{
+      display: block;
+      margin-left:auto;
+      margin-right:auto;
+}
+
+.spaced {
+      line-height: 1.4em;
+}
+p {
+      line-height: 1.4em;
+}
+
+.spaced sub, .spaced sup {
+      line-height: 0;
+      }
+
+sub, sup{
+      line-height: 0;
+}
+
+
+#bodyContent sup{
+      font-size: smaller;
+      vertical-align: baseline;
+      position: relative;
+      bottom: 0.33em;
+}
+#bodyContent sub{
+      font-size: smaller;
+      vertical-align: baseline;
+      position: relative;
+      bottom: -0.25em;
+}
+
+*/
+/*-------------------------------*/
+

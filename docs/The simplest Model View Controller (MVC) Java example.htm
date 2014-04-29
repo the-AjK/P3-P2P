@@ -1,0 +1,615 @@
+
+<!-- saved from url=(0029)http://www.austintek.com/mvc/ -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<link type="text/css" rel="stylesheet" href="./The simplest Model View Controller (MVC) Java example_files/austintek.css">
+<link type="text/css" rel="stylesheet" href="./The simplest Model View Controller (MVC) Java example_files/dual_boot_usb_flash_drive.css">
+<title>The simplest Model View Controller (MVC) Java example</title><meta name="generator" content="DocBook XSL Stylesheets V1.50.1-EXP2">
+<script src="./The simplest Model View Controller (MVC) Java example_files/hover.js"></script>
+<style type="text/css"></style></head>
+
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div id="hoverpopup" style="visibility:hidden; position:absolute; top:0; left:0;">
+<table bgcolor="#0000FF">
+	<tbody><tr><td><font color="#FFFFFF">thumbnail is a clickable link through to two more levels of larger images</font></td></tr>
+</tbody></table></div>
+
+<table text="#000000" bgcolor="#ffffff" link="#7f0000" vlink="#400000" alink="#ff0000" cellspacing="0" cellpadding="0" width="100%" border="0"> 
+  <tbody><tr valign="middle" bgcolor="#c0ffff"> 
+    <td width="30%" align="left"> 
+      <a href="http://www.austintek.com/">AustinTek homepage</a> 
+    </td> 
+    <td width="70%" align="right"> | 
+        <a href="http://www.austintek.com/LVS/">Linux Virtual Server Links</a> | 
+        <a href="http://www.wm7d.net/azproj.shtml">AZ_PROJ map server</a> | 
+    </td> 
+  </tr> 
+</tbody></table><div class="article"><div class="titlepage"><div><h1 class="title"><a name="id2733209"></a>The simplest Model View Controller (MVC) Java example</h1></div><div><div class="author"><h3 class="author">Joseph Mack</h3><div class="affiliation"><span class="orgname">jmack (at) austintek (dot) com <br></span><span class="orgdiv"><br></span></div></div></div><div><p class="copyright">Copyright © 2011 Joseph Mack</p></div><div><p class="pubdate">15 Aug 2011, released under GPL-v3</p></div><div><div class="abstract"><p class="title"><b>Abstract</b></p><p>
+The simplest MVC Java example I could think of; I wanted the MVC version of "Hello World!".
+	</p><p>
+Material/images from this webpage may be used, as long as credit is given to the author, 
+and the url of this webpage is included as a reference. 
+	</p><p>
+GPL source code is at 
+<a href="http://www.austintek.com/mvc/files/MVC.tar.gz" target="_top">MVC.tar.gz</a>
+(http://www.austintek.com/mvc/files/MVC.tar.gz).
+	</p></div></div><hr></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt>1. <a href="http://www.austintek.com/mvc/#austintek_mvc.intro">Introduction</a></dt><dt>2. <a href="http://www.austintek.com/mvc/#austintek_mvc.model">The Model</a></dt><dt>3. <a href="http://www.austintek.com/mvc/#austintek_mvc.view_1">The View pt1</a></dt><dt>4. <a href="http://www.austintek.com/mvc/#austintek_mvc.view_2">The View pt2</a></dt><dt>5. <a href="http://www.austintek.com/mvc/#austintek_mvc.controller">The Controller</a></dt><dt>6. <a href="http://www.austintek.com/mvc/#austintek_mvc.glue">Glue code</a></dt><dt>7. <a href="http://www.austintek.com/mvc/#austintek_mvc.conclusion">Conclusion</a></dt></dl></div><div class="section"><div class="titlepage"><div><h2 class="title" style="clear: both"><a name="austintek_mvc.intro"></a>1. Introduction</h2></div></div><p>
+Most MVC examples show code doing something interesting.
+Here, to make the MVC functionality clear,
+the model does almost nothing (it has a counter)
+and the model, view and controller are separate classes.
+</p><div class="figure"><a name="mvc_gui"></a><p class="title"><b>Figure 1. 
+MVC GUI
+        </b></p><div class="mediaobject"><table align="center" border="0" summary="manufactured viewport for HTML img" cellspacing="0" cellpadding="0"><tbody><tr><td align="center"><img src="./The simplest Model View Controller (MVC) Java example_files/mvc.gif" alt="MVC GUI"></td></tr></tbody></table><div class="caption"></div></div></div><p>
+The code here is based on Joseph Bergin's well explained
+<a href="http://csis.pace.edu/~bergin/mvc/mvcgui.html" target="_top">
+Building Graphical User Interfaces with the MVC Pattern
+</a>
+(http://csis.pace.edu/~bergin/mvc/mvcgui.html).
+Bergin's model has been simplified (Model class) and Bergin's GUI class, 
+which contains both the controller and the view, 
+has been separated into two classes (Controller class, View class),
+resulting one class for each of the model, view and controller.
+(Amir Salihefendic, 
+<a href="http://amix.dk/blog/post/19615" target="_top">Model View Controller: History, theory and usage</a>
+http://amix.dk/blog/post/19615, 
+notes that historically the controller and view were coded together as the user interface.)
+</p><p>
+The best explanation of design patterns I've found is by Bob Tarr
+<a href="http://userpages.umbc.edu/~tarr/dp/fall00/cs491.html" target="_top">CMSC491D Design Patterns In Java</a>
+(http://userpages.umbc.edu/~tarr/dp/fall00/cs491.html)
+and
+<a href="http://userpages.umbc.edu/~tarr/dp/spr06/cs446.html" target="_top">CMSC446 Introduction To Design Patterns</a>
+(http://userpages.umbc.edu/~tarr/dp/spr06/cs446.html).
+</p></div><div class="section"><div class="titlepage"><div><h2 class="title" style="clear: both"><a name="austintek_mvc.model"></a>2. The Model</h2></div></div><p>
+The model has state (a counter). 
+The model accepts a command to change state (increment the counter).
+The model emits notices of change of state, and the new state.
+</p><p>
+The model has no code specifying where the notices are sent 
+or from where it will accept the command.
+This makes the model reusable.
+A non-reusable piece of code <i>RunMVC</i> tells model to send notices to view and to accept commands from controller.
+</p><table border="0" bgcolor="#FFFFFF"><tbody><tr><td><pre class="programlisting">//Model.java
+//(C) Joseph Mack 2011, jmack (at) wm7d (dot) net, released under GPL v3 (or any later version)
+
+//inspired by Joseph Bergin's MVC gui at http://csis.pace.edu/~bergin/mvc/mvcgui.html
+
+//Model holds an int counter (that's all it is).
+//Model is an Observable
+//Model doesn't know about View or Controller
+
+public class Model extends java.util.Observable {	
+	
+	private int counter;	//primitive, automatically initialised to 0
+
+	public Model(){
+
+		System.out.println("Model()");
+
+		/**
+		Problem initialising both model and view:
+
+		On a car you set the speedometer (view) to 0 when the car (model) is stationary.
+		In some circles, this is called calibrating the readout instrument.
+		In this MVC example, you would need two separate pieces of initialisation code,
+			in the model and in the view. If you changed the initialisation value in one
+			you'd have to remember (or know) to change the initialisation value in the other.
+			A recipe for disaster.
+
+		Alternately, when instantiating model, you could run  
+
+		setValue(0);
+
+		as part of the constructor, sending a message to the view. 
+		This requires the view to be instantiated before the model,
+		otherwise the message will be send to null (the unitialised value for view).
+		This isn't a particularly onerous requirement, and is possibly a reasonable approach.
+
+		Alternately, have RunMVC tell the view to intialise the model.
+		The requires the view to have a reference to the model.
+		This seemed an unneccesary complication.
+
+		I decided instead in RunMVC, to instantiate model, view and controller, make all the connections,
+		then since the Controller already has a reference to the model (which it uses to alter the status of the model),
+		to initialise the model from the controller and have the model automatically update the view.
+		*/
+
+	} //Model()
+
+	//uncomment this if View is using Model Pull to get the counter
+	//not needed if getting counter from notifyObservers()
+	//public int getValue(){return counter;}
+
+	//notifyObservers()
+	//model sends notification to view because of RunMVC: myModel.addObserver(myView)
+	//myView then runs update()
+	//
+	//model Push - send counter as part of the message
+	public void setValue(int value) {
+
+		this.counter = value;
+		System.out.println("Model init: counter = " + counter);
+		setChanged();
+		//model Push - send counter as part of the message
+		notifyObservers(counter);
+		//if using Model Pull, then can use notifyObservers()
+		//notifyObservers()
+
+	} //setValue()
+	
+	public void incrementValue() {
+
+		++counter;
+		System.out.println("Model     : counter = " + counter);
+		setChanged();
+		//model Push - send counter as part of the message
+		notifyObservers(counter);
+		//if using Model Pull, then can use notifyObservers()
+		//notifyObservers()
+
+	} //incrementValue()
+	
+} //Model
+</pre></td></tr></tbody></table><p>
+The Model has
+</p><div class="itemizedlist"><ul type="disc"><li>
+		a counter
+	</li><li>
+		a method to increment the counter (the Model's main functionality)
+	</li><li>
+		a method to intitialise the counter
+	</li><li>
+		a null constructor (well, the constructor prints a notice to the console)
+	</li></ul></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0"><tbody><tr><td rowspan="2" align="center" valign="top" width="25"><img src="./The simplest Model View Controller (MVC) Java example_files/note.png"></td><th>Note</th></tr><tr><td colspan="2" align="left" valign="top">
+The Model doesn't know about (<i>i.e.</i> have a reference to) 
+what is viewing or controlling it.
+All it knows is its status.
+This is required for the Model to be reusable.
+</td></tr></tbody></table></div><p>
+In this code <i>Model</i>:<b>notifyObservers(counter)</b>
+pushes the model's status to the View.
+In Bergin's code, the generic <i>Model</i>:<b>notifyObservers()</b>
+(<i>i.e.</i> without sending any status information), 
+requires View to then pull from the Model (in <i>View</i>:<b>model.getValue()</b>). 
+(The code for pull in the Model is commented out.)
+If pull is used, the View needs a reference to the Model (code is also commented out in View), 
+making the View less reusable.
+</p><p>
+By extending <i>Observable</i>,  
+Model has the method <i>Observable</i>:<b>addObservers()</b> 
+to send (change of) status messages to the view.
+With the code for the Model not having a reference to the View (at least as an attribute), 
+how does the Model know where view is?
+A non-reusable glue class (my term) <i>RunMVC</i> instantiates the objects model, view and controller
+and tells them what they need to know about each other.
+<i>RunMVC</i>:<b>myModel.addObserver(Observer myView)</b> 
+gives the model a reference to the view.
+Although there is no mention of view in the model code (thus making Model reusable), 
+the model is being passed a reference to the view.
+This can be done because Model is an <i>Observable</i> and 
+an <i>Observable</i> 
+knows the declaration of an <i>Observer</i> (like view).
+</p><blockquote class="blockquote">
+To make the <i>Observable</i> model reusable, it must not have references to arbitary classes.
+We need to pass model a reference to the <i>Observer</i> view.
+The declaration of <i>Observable</i> knows what an <i>Observer</i> is.
+As long as view extends <i>Observer</i>, we can pass a reference to view,
+without having to hard code view into model.
+The important part is that we can make model reusable 
+by building in the declaration of <i>Observer</i>, allowing model to accept a reference to view .
+</blockquote></div><div class="section"><div class="titlepage"><div><h2 class="title" style="clear: both"><a name="austintek_mvc.view_1"></a>3. The View pt1</h2></div></div><p>
+View is the UI (it's a GUI). 
+View shows the model's state, and allows the user to enter commands which will change the model's state.
+</p><div class="warning" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0"><tbody><tr><td rowspan="2" align="center" valign="top" width="25"><img src="./The simplest Model View Controller (MVC) Java example_files/warning.png"></td><th>Warning</th></tr><tr><td colspan="2" align="left" valign="top">
+This code works fine, but is not reusable.
+It's what you might write for a first iteration.
+If you just want the reusable code 
+and aren't interested in the explanation, hop to 
+<a href="http://www.austintek.com/mvc/#austintek_mvc.view_2">The View pt2</a>.
+</td></tr></tbody></table></div><table border="0" bgcolor="#FFFFFF"><tbody><tr><td><pre class="programlisting">//View.java
+//(C) Joseph Mack 2011, jmack (at) wm7d (dot) net, released under GPL v3 (or any later version)
+
+//inspired by Joseph Bergin's MVC gui at http://csis.pace.edu/~bergin/mvc/mvcgui.html
+
+//View is an Observer
+
+import java.awt.Button;
+import java.awt.Panel;
+import java.awt.Frame;
+import java.awt.TextField;
+import java.awt.Label;
+import java.awt.event.WindowEvent;	//for CloseListener()
+import java.awt.event.WindowAdapter;	//for CloseListener()
+import java.lang.Integer;		//int from Model is passed as an Integer
+import java.util.Observable;		//for update();
+
+class View implements java.util.Observer {
+
+	//attributes as must be visible within class
+	private TextField myTextField;
+	private Button button; 
+
+	//private Model model;		//Joe: Model is hardwired in, 
+					//needed only if view initialises model (which we aren't doing)
+	
+	View() {
+		System.out.println("View()");	
+		
+		//frame in constructor and not an attribute as doesn't need to be visible to whole class
+		Frame frame 		= new Frame("simple MVC");
+		frame.add("North", new Label("counter"));
+
+		myTextField 		= new TextField();
+		frame.add("Center", myTextField);
+
+		//panel in constructor and not an attribute as doesn't need to be visible to whole class
+		Panel panel 		= new Panel();
+		button	 		= new Button("PressMe");
+		panel.add(button);
+		frame.add("South", panel);		
+
+		frame.addWindowListener(new CloseListener());	
+		frame.setSize(200,100);
+		frame.setLocation(100,100);
+		frame.setVisible(true);
+
+	} //View()
+
+	// Called from the Model
+    	public void update(Observable obs, Object obj) {
+
+		//who called us and what did they send?
+		//System.out.println ("View      : Observable is " + obs.getClass() + ", object passed is " + obj.getClass());
+
+		//model Pull 
+		//ignore obj and ask model for value, 
+		//to do this, the view has to know about the model (which I decided I didn't want to do)
+		//uncomment next line to do Model Pull
+    		//myTextField.setText("" + model.getValue());
+
+		//model Push 
+		//parse obj
+		myTextField.setText("" + ((Integer)obj).intValue());	//obj is an Object, need to cast to an Integer
+
+    	} //update()
+
+	//to initialise TextField
+	public void setValue(int v){
+    		myTextField.setText("" + v);
+	} //setValue()
+    	
+	public void addController(Controller controller){
+		System.out.println("View      : adding controller");
+		button.addActionListener(controller);	//need controller before adding it as a listener 
+	} //addController()
+
+	//uncomment to allow controller to use view to initialise model	
+	//public void addModel(Model m){
+	//	System.out.println("View      : adding model");
+	//	this.model = m;
+	//} //addModel()
+	
+	public static class CloseListener extends WindowAdapter {
+		public void windowClosing(WindowEvent e) {
+			e.getWindow().setVisible(false);
+			System.exit(0);
+		} //windowClosing()
+	} //CloseListener
+
+} //View
+</pre></td></tr></tbody></table><p>
+As is required for reusability,
+the View doesn't know about (<i>i.e.</i> have a reference to) the Model.
+(If you use the view to initialise the model,
+and we didn't, then the view needs a refence to the model.)
+</p><p>
+The View doesn't hold a reference to the controller either.
+However the View sends button actions to the controller,
+so the button must be given a reference to the controller.
+Here is the relevant code (from View),
+which is called by the glue class <i>RunMVC</i>). 
+</p><table border="0" bgcolor="#FFFFFF"><tbody><tr><td><pre class="programlisting">        public void addController(Controller controller){
+                button.addActionListener(controller);
+        } //addController()
+</pre></td></tr></tbody></table><p>
+For View to accept the controller reference (parameter to <b>addController()</b>), 
+View must have the declaration of <i>Controller</i>.
+The consequence of this requirement is that View is dependant on <i>Controller</i> and hence not reusable.
+</p><p>
+We didn't have the same reusability problem with Model, 
+because Java had declared a base class <i>Observer</i>.
+The problem of View not being reusable 
+comes about because Java doesn't have a base class <i>Controller</i>.
+Why isn't there a base class <i>Controller</i>? 
+According to google, no-one has even thought about it.
+I mused about  the central role of the 30yr old MVC to OOP design patterns, 
+and wondered why someone hadn't written a controller base class.
+The base class had to be extendable by classes that listen (presumably to UIs).
+Then I realised that <i>Controller</i> is an <i>ActionListner</i>.
+</p><p>
+Here's the new View code
+</p><table border="0" bgcolor="#FFFFFF"><tbody><tr><td><pre class="programlisting">import java.awt.event.ActionListener;
+.
+.
+        public void addController(ActionListener controller){
+                button.addActionListener(controller);
+        } //addController()
+</pre></td></tr></tbody></table><p>
+This gets us part of the way. Now View is reusable by controllers which are ActionListeners, 
+but not controllers which are other types of Listeners.
+Presumably View can be extended for all listeners.
+Perhaps no-one needs a base class for Controller.
+</p><p>
+Extending the idea of referring to controller by its superclass, 
+going up one more level to <i>java.util.EventListener</i> gives an error
+</p><table border="0" bgcolor="#FFFFFF"><tbody><tr><td><pre class="programlisting">addActionListener(java.awt.event.ActionListener) in java.awt.Button cannot be applied to (java.util.EventListener)
+</pre></td></tr></tbody></table></div><div class="section"><div class="titlepage"><div><h2 class="title" style="clear: both"><a name="austintek_mvc.view_2"></a>4. The View pt2</h2></div></div><table border="0" bgcolor="#FFFFFF"><tbody><tr><td><pre class="programlisting">//View.java
+//(C) Joseph Mack 2011, jmack (at) wm7d (dot) net, released under GPL v3 (or any later version)
+
+//inspired by Joseph Bergin's MVC gui at http://csis.pace.edu/~bergin/mvc/mvcgui.html
+
+//View is an Observer
+
+import java.awt.Button;
+import java.awt.Panel;
+import java.awt.Frame;
+import java.awt.TextField;
+import java.awt.Label;
+import java.awt.event.WindowEvent;	//for CloseListener()
+import java.awt.event.WindowAdapter;	//for CloseListener()
+import java.lang.Integer;		//int from Model is passed as an Integer
+import java.util.Observable;		//for update();
+import java.awt.event.ActionListener;	//for addController()
+
+
+class View implements java.util.Observer {
+
+	//attributes as must be visible within class
+	private TextField myTextField;
+	private Button button; 
+
+	//private Model model;		//Joe: Model is hardwired in, 
+					//needed only if view initialises model (which we aren't doing)
+	
+	View() {
+		System.out.println("View()");	
+		
+		//frame in constructor and not an attribute as doesn't need to be visible to whole class
+		Frame frame 		= new Frame("simple MVC");
+		frame.add("North", new Label("counter"));
+
+		myTextField 		= new TextField();
+		frame.add("Center", myTextField);
+
+		//panel in constructor and not an attribute as doesn't need to be visible to whole class
+		Panel panel 		= new Panel();
+		button	 		= new Button("PressMe");
+		panel.add(button);
+		frame.add("South", panel);		
+
+		frame.addWindowListener(new CloseListener());	
+		frame.setSize(200,100);
+		frame.setLocation(100,100);
+		frame.setVisible(true);
+
+	} //View()
+
+	// Called from the Model
+    	public void update(Observable obs, Object obj) {
+
+		//who called us and what did they send?
+		//System.out.println ("View      : Observable is " + obs.getClass() + ", object passed is " + obj.getClass());
+
+		//model Pull 
+		//ignore obj and ask model for value, 
+		//to do this, the view has to know about the model (which I decided I didn't want to do)
+		//uncomment next line to do Model Pull
+    		//myTextField.setText("" + model.getValue());
+
+		//model Push 
+		//parse obj
+		myTextField.setText("" + ((Integer)obj).intValue());	//obj is an Object, need to cast to an Integer
+
+    	} //update()
+
+	//to initialise TextField
+	public void setValue(int v){
+    		myTextField.setText("" + v);
+	} //setValue()
+    	
+	public void addController(ActionListener controller){
+		System.out.println("View      : adding controller");
+		button.addActionListener(controller);	//need instance of controller before can add it as a listener 
+	} //addController()
+
+	//uncomment to allow controller to use view to initialise model	
+	//public void addModel(Model m){
+	//	System.out.println("View      : adding model");
+	//	this.model = m;
+	//} //addModel()
+	
+	public static class CloseListener extends WindowAdapter {
+		public void windowClosing(WindowEvent e) {
+			e.getWindow().setVisible(false);
+			System.exit(0);
+		} //windowClosing()
+	} //CloseListener
+
+} //View
+</pre></td></tr></tbody></table><p>
+	The view is an <i>Observer</i>. The view is a GUI which has
+</p><div class="itemizedlist"><ul type="disc"><li>
+		a TextField to display the status of the model (the value of the counter).
+	</li><li>
+		a Button to communicate with the controller (the controller is a button Listener)..
+	</li></ul></div><p>
+	The trivial functionality of View is a constructor which generates the GUI and a method to initialise the TextField.
+The interesting functionality of View communicates with the controller and the model.
+</p><div class="itemizedlist"><ul type="disc"><li>
+		a method <b>addController(ActionListener controller)</b>, 
+which attaches the controller as a listener to the button (called by the glue class <i>RunMVC</i>).
+	</li><li>
+		the magic part, <b>update()</b>, which receives the status message from model.
+	</li></ul></div><p>
+How does <b>myView.update()</b> get updated? 
+(It all happens inside the instance <i>Observable</i>:<b>myModel</b>.) 
+</p><div class="itemizedlist"><ul type="disc"><li>
+model changes state when the method <i>Model</i>:<b>incrementValue()</b> 
+is executed (by the controller).
+After first changing the model's state, 
+<i>Observable</i>:<b>setChanged()</b>
+changes the flag <i>Observable</i>:<b>changed</b> to true. 
+	</li><li>
+next <i>Model</i>:<b>notifyObservers(counter)</b> is run.
+<b>notifyObservers(counter)</b> is a method of <i>Observable</i>.
+<b>notifyObservers()</b> checks that <b>changed</b> is true, 
+sets it to false, looks up the vector of observers, 
+in our case finding <b>myView</b>, 
+and then runs <b>myView.update(Observable myModel. Object (Integer)counter)</b>.
+	</li><li><b>myView</b> now has the reference to the observable <b>myModel</b> 
+and a reference to its (new) status. 
+Subsequent commands in <b>update()</b> present the model's (new) status to the user.
+	</li></ul></div></div><div class="section"><div class="titlepage"><div><h2 class="title" style="clear: both"><a name="austintek_mvc.controller"></a>5. The Controller</h2></div></div><p>
+Controller is a Listener. It
+</p><div class="itemizedlist"><ul type="disc"><li>
+has a method <b>actionPerformed()</b>, which listens to View's button.
+When the method receives a button press, 
+it changes the state of Model by running <b>myModel.incrementValue()</b>.
+	</li><li>
+has code which is specific to Model and View. Controller is not reusable.
+	</li></ul></div><p>
+Controller has the following routine functionality
+</p><div class="itemizedlist"><ul type="disc"><li>
+a constructor which sends a notice to the console.
+	</li><li>
+a method to initialise the Model.
+	</li><li>
+methods to get references to myModel and myView (these methods are run by the glue class <i>RunMVC</i>).
+	</li></ul></div><table border="0" bgcolor="#FFFFFF"><tbody><tr><td><pre class="programlisting">//Controller.java
+//(C) Joseph Mack 2011, jmack (at) wm7d (dot) net, released under GPL v3 (or any later version)
+
+//inspired by Joseph Bergin's MVC gui at http://csis.pace.edu/~bergin/mvc/mvcgui.html
+
+//Controller is a Listener
+
+class Controller implements java.awt.event.ActionListener {
+
+	//Joe: Controller has Model and View hardwired in
+	Model model;
+	View view;
+
+	Controller() {	
+		System.out.println ("Controller()");
+	} //Controller()
+
+	//invoked when a button is pressed
+	public void actionPerformed(java.awt.event.ActionEvent e){
+		//uncomment to see what action happened at view
+		/*
+		System.out.println ("Controller: The " + e.getActionCommand() 
+			+ " button is clicked at " + new java.util.Date(e.getWhen())
+			+ " with e.paramString " + e.paramString() );
+		*/
+		System.out.println("Controller: acting on Model");
+		model.incrementValue();
+	} //actionPerformed()
+
+	//Joe I should be able to add any model/view with the correct API
+	//but here I can only add Model/View
+	public void addModel(Model m){
+		System.out.println("Controller: adding model");
+		this.model = m;
+	} //addModel()
+
+	public void addView(View v){
+		System.out.println("Controller: adding view");
+		this.view = v;
+	} //addView()
+
+	public void initModel(int x){
+		model.setValue(x);
+	} //initModel()
+
+} //Controller
+</pre></td></tr></tbody></table></div><div class="section"><div class="titlepage"><div><h2 class="title" style="clear: both"><a name="austintek_mvc.glue"></a>6. Glue code</h2></div></div><p>
+Here is the code which instantiates the classes and passes references to the classes which need them.
+It then runs the initialisation code.
+This code is specific to the model, controller and view. It is not meant to be reusable.
+</p><table border="0" bgcolor="#FFFFFF"><tbody><tr><td><pre class="programlisting">//RunMVC.java
+//(C) Joseph Mack 2011, jmack (at) wm7d (dot) net, released under GPL v3 (or any later version)
+
+public class RunMVC {
+
+	//The order of instantiating the objects below will be important for some pairs of commands.
+	//I haven't explored this in any detail, beyond that the order below works.
+
+	private int start_value = 10;	//initialise model, which in turn initialises view
+
+	public RunMVC() {
+
+		//create Model and View
+		Model myModel 	= new Model();
+		View myView 	= new View();
+
+		//tell Model about View. 
+		myModel.addObserver(myView);
+		/*	
+			init model after view is instantiated and can show the status of the model
+			(I later decided that only the controller should talk to the model
+			and moved initialisation to the controller (see below).)
+		*/
+		//uncomment to directly initialise Model
+		//myModel.setValue(start_value);	
+
+		//create Controller. tell it about Model and View, initialise model
+		Controller myController = new Controller();
+		myController.addModel(myModel);
+		myController.addView(myView);
+		myController.initModel(start_value);
+
+		//tell View about Controller 
+		myView.addController(myController);
+		//and Model, 
+		//this was only needed when the view inits the model
+		//myView.addModel(myModel);
+
+	} //RunMVC()
+
+} //RunMVC
+</pre></td></tr></tbody></table><p>
+I could have had a <b>main()</b> in <i>RunMVC</i>.
+However when writing test code, I find it easier for the executable and jar files all to have the same name.
+Here's Main.
+</p><table border="0" bgcolor="#FFFFFF"><tbody><tr><td><pre class="programlisting">//(C) Joseph Mack 2011, jmack (at) wm7d (dot) net, released under GPL v3 (or any later version)
+
+public class Main{
+
+	public static void main(String[] args){
+
+		RunMVC mainRunMVC = new RunMVC();
+
+	} //main()
+
+} //Main
+</pre></td></tr></tbody></table><p>
+Here's the relevant part of my Makefile
+</p><table border="0" bgcolor="#FFFFFF"><tbody><tr><td><pre class="programlisting">jar cfe RunMVC.jar Main *.class
+</pre></td></tr></tbody></table></div><div class="section"><div class="titlepage"><div><h2 class="title" style="clear: both"><a name="austintek_mvc.conclusion"></a>7. Conclusion</h2></div></div><p>
+A simple example of MVC. There is one class for each of Model, View and Controller.
+Model is reusable. View is reusable as long as Controller is an ActionListener.
+Controller is not reusable.
+</p></div><table border="0" bgcolor="#FFFFFF"><tbody><tr><td><pre class="programlisting"></pre></td></tr></tbody></table></div>
+ 
+<table cellspacing="0" cellpadding="0" width="100%" border="0"> 
+  <tbody><tr valign="middle" bgcolor="#c0ffff"> 
+    <td width="30%" align="left"> 
+      <a href="http://www.austintek.com/">AustinTek homepage</a> 
+    </td> 
+    <td width="70%" align="right"> | 
+        <a href="http://www.austintek.com/LVS/">Linux Virtual Server Links</a> | 
+        <a href="http://www.wm7d.net/azproj.shtml">AZ_PROJ map server</a> | 
+    </td> 
+  </tr> 
+</tbody></table> 
+ 
+</body></html>
