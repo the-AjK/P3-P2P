@@ -18,8 +18,7 @@ import java.rmi.*;
 
 public interface IServer extends Remote
 {
-	//metodi per richiedere la connessione o disconnessione al server da parte di un altro server
-	//public void connect2server(String server) throws RemoteException;
+	public void connectMEServer(String _serverName) throws RemoteException;
 
 	
 }

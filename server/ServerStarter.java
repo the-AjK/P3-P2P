@@ -36,6 +36,9 @@ public class ServerStarter
 		
 		//inizializzo il model con il nome del server ed i vari dati
 		sController.initModel(_nomeServer);
+		
+		//avvio il server
+		sController.serverInit();
 	}
 	
 	/****************************************************************************************\

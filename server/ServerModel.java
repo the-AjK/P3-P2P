@@ -12,17 +12,19 @@
 \****************************************************************************************/
 package server;
 
-import java.util.Vector; 		//vector
-import java.awt.Color;			//color
+import java.util.Vector; 		
+import java.awt.Color;			
+import common.DeviceClient;
+import common.DeviceServer;
 
 public class ServerModel extends java.util.Observable 
 {
 	//dati interfaccia grafica
-	private String serverName;		//nome del server
-	private String clients;			//clients connessi
-	private String servers;			//server connessi
-	private Vector<String> log;		//log di sistema
-	private Color coloreLog;		//colore testo della casella log
+	private String serverName;				//nome del server
+	private Vector<DeviceClient> clients;	//clients connessi
+	private Vector<DeviceServer> servers;	//server connessi
+	private Vector<String> log;				//log di sistema
+	private Color coloreLog;				//colore testo della casella log
 	
 	//dati del server	
 	
@@ -30,9 +32,9 @@ public class ServerModel extends java.util.Observable
 	public ServerModel()
 	{	
 		//inizializzo i campi dati
-		serverName = "";
-		clients = "";
-		servers = "";
+		serverName = "JK :)";
+		clients = new Vector<DeviceClient>();
+		servers = new Vector<DeviceServer>();
 		log = new Vector<String>();
 		log.add("P3-P2P Server (C) JK");
 	}
@@ -47,22 +49,49 @@ public class ServerModel extends java.util.Observable
 		notifyObservers();//model pull
 	}
 	
-	public String getClientsText(){return clients;}	
-	public String getServersText(){return servers;}
-	
-	public String getLogText()
+	//converte un vector di stringhe in un'unica stringa
+	private String vector2String(Vector<String> v)
 	{
-		String logText = "";
-		for(int i=0; i<log.size(); i++)
+		String res = "";
+		for(int i=0; i<v.size(); i++)
 		{
-			logText = logText + log.get(i) + "\n";
+			res = res + v.get(i) + "\n";
 		}
-		return logText;
+		return res;
+	}
+	
+	public String getClientsText()
+	{
+		String res = "";
+		for(int i=0; i<clients.size(); i++)
+		{
+			res = res + clients.get(i).getName() + "\n";
+		}
+		return res;
+	}	
+	
+	public String getServersText()
+	{
+		String res = "";
+		for(int i=0; i<servers.size(); i++)
+		{
+			res = res + servers.get(i).getName() + "\n";
+		}
+		return res;
+	}
+	
+	public String getLogText(){return vector2String(log);}
+	
+	public void addServer(String _nomeServer, IServer _ref)
+	{
+		servers.add(new DeviceServer(_nomeServer,_ref)); //aggiungo un server alla lista di server
+		setChanged();
+		notifyObservers();//model pull
 	}
 	
 	public void addLogText(String logLine)
 	{
-		log.add(new String(logLine));
+		log.add(logLine);
 		setChanged();
 		notifyObservers();//model pull
 	}

@@ -19,15 +19,17 @@ import java.rmi.server.*;
 //import java.net.MalformedURLException;	//malformedURLexception
 
 //import client.IClient;
-//import client.IClientImpl;
-//import client.ClientResource;
-//import client.Client;
 
 public class ClientController extends UnicastRemoteObject implements IClient, java.awt.event.ActionListener
 {
-	private static final String HOST = "localhost:1099";	//host per la connessione RMI
-	private static final String RMITAG = "P3-P2P-JK"; 		//chiave identificativa per il registro RMI
-			
+	private static final String HOST = "localhost:1099";					//host per la connessione RMI
+	private static final String RMITAG = "P3-P2P-JK"; 						//chiave identificativa per il registro RMI
+	private static final String CONNECT_BUTTON_TEXT    = "Connetti";		//testo del pulsante di disconnessione
+	private static final String DISCONNECT_BUTTON_TEXT = "Disconnetti";	
+	private static final String CONNECTION_BUTTON_TEXT = "in connessione...";
+	private static final String FIND_BUTTON_TEXT = "Cerca e Scarica";
+
+	
 	//riferimenti alle componenti View e Model
 	private ClientView view;
 	private ClientModel model;
@@ -41,7 +43,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, ja
 	
 	public void actionPerformed(java.awt.event.ActionEvent e)
 	{
-		System.out.println ("Controller Client: The " + e.getActionCommand() 
+		/*System.out.println ("Controller Client: The " + e.getActionCommand() 
 			+ " button is clicked at " + new java.util.Date(e.getWhen())
 			+ " with e.paramString " + e.paramString() );
 			
@@ -51,6 +53,21 @@ public class ClientController extends UnicastRemoteObject implements IClient, ja
 		new java.util.Date(e.getWhen()) = Wed Apr 30 09:07:58	CEST 2014 
 		e.paramString() = ACTION_PERFORMED,cmd=Cerca e Scarica,when=1398841678102,modifiers=Button1
 		*/
+		
+		switch(e.getActionCommand())
+		{
+			case FIND_BUTTON_TEXT:
+				System.out.println("cerca" + view.getFindText());
+				break;
+				
+			case CONNECT_BUTTON_TEXT:
+				model.setDisconnectBtext(DISCONNECT_BUTTON_TEXT);
+				break;
+				
+			case DISCONNECT_BUTTON_TEXT:
+				model.setDisconnectBtext(CONNECT_BUTTON_TEXT);
+				break;		
+		}
 	}
 	
 	//metodi per impostare i riferimenti al model ed alla view
@@ -70,6 +87,11 @@ public class ClientController extends UnicastRemoteObject implements IClient, ja
 		model.setServer2Connect(_server2connect);
 		model.setDownloadCapacity(_D);
 		//model.setResources(_R);		
+		
+		model.setLogColor(Color.RED);
+		model.setDisconnectBtext(CONNECT_BUTTON_TEXT);
+		model.setDisconnectBenabled(true);
+		model.setFindBenabled(true);
 		model.addLogText("inizializzazione completata.");
 		model.addLogText("connessione automatica avviata...");
 	}

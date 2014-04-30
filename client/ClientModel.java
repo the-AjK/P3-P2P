@@ -23,6 +23,9 @@ public class ClientModel extends java.util.Observable
 	private int downloadCapacity;		//capacità di download
 	private Vector<String> log;			//log di sistema
 	private Color coloreLog;			//colore testo della casella log
+	private boolean findBenabled;			//flag che indica se il pulsante di ricerca è abilitato oppure no
+	private boolean disconnectBenabled;	//flag che indica se il pulsante di disconnessione è abilitato oppure no
+	private String disconnectBtext;		//testo del pulsante di disconnessione
 		
 	//dati del client
 	
@@ -90,6 +93,30 @@ public class ClientModel extends java.util.Observable
 		setChanged();
 		notifyObservers();//model pull
 	}
+	
+	public boolean getFindBenabled(){return findBenabled;}
+	public void setFindBenabled(boolean _en)
+	{
+		findBenabled = _en;
+		setChanged();
+		notifyObservers();//model pull
+	}
+	
+	public boolean getDisconnectBenabled(){return disconnectBenabled;}
+	public void setDisconnectBenabled(boolean _en)
+	{
+		disconnectBenabled = _en;
+		setChanged();
+		notifyObservers();//model pull
+	}
+	
+	public String getDisconnectBtext(){return disconnectBtext;}
+	public void  setDisconnectBtext(String _testoB)
+	{
+		disconnectBtext = _testoB;
+		setChanged();
+		notifyObservers();//model pull
+	}	
 	
 
 }//end class ClientModel()

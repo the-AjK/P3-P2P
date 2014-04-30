@@ -20,9 +20,10 @@ import java.awt.Color;			//color
 //import java.net.MalformedURLException;	//malformedURLexception
 
 //import client.IClient;
-//import client.IClientImpl;
-//import client.ClientResource;
-//import client.Client;
+
+import common.DeviceServer;
+import common.DeviceClient;
+import common.Resource;
 
 public class ServerController extends UnicastRemoteObject implements IServer, java.awt.event.ActionListener
 {
@@ -55,15 +56,18 @@ public class ServerController extends UnicastRemoteObject implements IServer, ja
 	*/
 	
 	//costruttore
-	//public ServerController(String _nome, JTextArea _clients, JTextArea _servers, JTextArea _log) throws Exception 
-	public ServerController() throws Exception 
+	public ServerController() throws Exception
 	{
-		
-				
+	
+	}
+	
+	public void serverInit() throws Exception
+	{
 		//inizio le operazioni di avvio del server...
-		//connect2server(); 					//controllo i server online e mi connetto ad essi
-		//serverRebind(nomeServer,this);		//pubblico il mio nome così i clients possono collegarsi
-		//log.setForeground(Color.BLUE);			
+		serverRebind(model.getServerName(),this);		//pubblico il mio nome così i clients possono collegarsi
+		model.addLogText("server " + model.getServerName() + " pronto!");
+		model.setLogColor(Color.BLUE);
+		connect2server();								//controllo i server online e mi connetto ad essi
 	}
 	
 	/****************************************************************************************\
@@ -102,49 +106,59 @@ public class ServerController extends UnicastRemoteObject implements IServer, ja
 	}
 	*/
 	
+	private String RMITAG2ServerName(String _rmiString)
+	{
+		return _rmiString.substring(_rmiString.indexOf(RMITAG + "/") + RMITAG.length() + 1, _rmiString.length());
+	}
+	
 	/****************************************************************************************\
 	|	function: private void connect2server()
 	|	description: cerca di recuperare la lista server nel registro RMI e si connette ad essi
 	\****************************************************************************************/
 	private void connect2server() throws Exception
 	{
-		//recupero la lista dei server iscritti al registro RMI
-		String[] serverNamesList = Naming.list("//" + HOST );
+		String[] serverNamesList = {};	
+			
+		model.addLogText("ricerca server online...");
 		
-		//mi connetto...
+		//recupero la lista dei server iscritti al registro RMI
+		try{
+			serverNamesList = Naming.list("//" + HOST );
+		}
+		catch(ConnectException e)
+		{
+			model.addLogText("impossibile recuperare la lista server!");
+			model.addLogText("errore di connessione al registro RMI!");	
+			model.addLogText("server auto-shutdown tra 30sec...");	
+			Thread.sleep(30000);
+			System.exit(-1);
+		}
+		
+		IServer ref = null;
+		
 		for(int i=0; i<serverNamesList.length; i++)
 		{
 			//controllo se contiene il TAG
 			if(serverNamesList[i].contains(RMITAG + "/"))
 			{
-				//String server2connect = ; 								//recupero il nome del server a cui voglio connettermi
-				//IServer ref = serverLookup(server2connect);				//recupero il riferimento a tale server
-				//ref.connectMEServer(nomeServer); 						//richiedo di connettermi al server
-				//servers.append(serverList.get(i) + "\n");				//aggiorno l'interfaccia grafica: server
-				//log.append("connesso a " + serverList.get(i) + "!\n");	//ed i log
-				//log.append("contiene " + i + ": " + serverNamesList[i] + "\n");
-			}else{
-				//log.append("nolista " + i + ": " + serverNamesList[i] + "\n");
+				String server2connect = RMITAG2ServerName(serverNamesList[i]); 	//recupero il nome del server a cui voglio connettermi
+				if(server2connect.equals(model.getServerName()))continue;		//evito di connettermi a me stesso :) 
+				try{
+					ref = serverLookup(server2connect);							//recupero il riferimento a tale server
+					ref.connectMEServer(model.getServerName()); 				//richiedo di connettermi al server
+				}catch(Exception e){
+					model.addLogText("impossibile contattare il server " + server2connect + "!");
+					ref = null;
+				}
+				if(ref != null)													//se mi sono collegato al server
+				{
+					model.addServer(server2connect,ref);						//aggiorno l'interfaccia grafica
+					model.addLogText("connesso a " + server2connect + "!");
+				}
 			}
 		}
-		//se la lista non è vuota, significa che ci sono altri server online
-		/*if(ref!=null)
-		{	
-			
-			//quindi mi connetto a tutti i server
-			//log.append("mi connetto ai server...\n");
-			for(int i=0; i<serverList.size(); i++)
-			{
-				ref = RMIlookup(serverList.get(i)); 					//prendo il riferimento al server
-				ref.connectMEServer(nomeServer); 						//richiedo di connettermi al server
-				servers.append(serverList.get(i) + "\n");				//aggiorno l'interfaccia grafica: server
-				log.append("connesso a " + serverList.get(i) + "!\n");	//ed i log
-			}
-			serverList.add(nomeServer);									//mi aggiungo anch'io alla lista
-		}
-		*/
 		
-	}	
+	} //connect2server()
 	
 	public void actionPerformed(java.awt.event.ActionEvent e)
 	{
@@ -167,11 +181,26 @@ public class ServerController extends UnicastRemoteObject implements IServer, ja
 	public void initModel(String _nome)
 	{
 		model.setServerName(_nome);
-		model.addLogText("inizializzazione completata.");
-		model.addLogText("ricerca server online...");
+		model.setLogColor(Color.RED);
+		model.addLogText("inizializzazione server avviata...");		
+	}
+	
+	//implemento i metodi dell'interfaccia IServer
+	public void connectMEServer(String _serverName) throws RemoteException
+	{
+		IServer ref;
+		try{
+			ref = serverLookup(_serverName);
+		}catch(Exception e){
+			model.addLogText("impossibile contattare il server " + _serverName + "!");
+			ref = null;
+		}
 		
-		//log.append("inizializzazione del server " + nome + " completata!\n");
-		model.setLogColor(Color.BLUE);
+		if(ref != null)
+		{
+			model.addServer(_serverName,ref);					
+			model.addLogText("connesso a " + _serverName + "!");
+		}
 	}
 
 }//end class ServerController()

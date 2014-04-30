@@ -47,7 +47,7 @@ public class ClientView implements java.util.Observer
 		
 		JPanel info = new JPanel();
 		info.setLayout(new GridLayout(2,1));
-		info.setPreferredSize(new Dimension(385,295));
+		info.setPreferredSize(new Dimension(400,295));
 		
 		//preparo il primo pannello per i comandi utente
 		JPanel userActionsP = new JPanel();
@@ -64,12 +64,12 @@ public class ClientView implements java.util.Observer
 											 toFind.getPreferredSize().height)); 
 		findP.add(toFind); 	//aggiungo la casella di testo
 		findP.add(findB);	//aggiungo il pulsante cerca
-		findB.setEnabled(true);
-		
+		findB.setEnabled(false);
+				
 		//creo il pulsante Disconnetti
-		disconnectB = new JButton("> Connetti <");
+		disconnectB = new JButton("    avvio client...    ");
 		disconnectB.setPreferredSize(new Dimension(disconnectB.getPreferredSize().width,  
-													findP.getPreferredSize().height-15)); 
+													findP.getPreferredSize().height-9)); 
 		disconnectB.setEnabled(false);
 		
 		//aggiungo barra di ricerca e pulsante disconnetti al pannello userActionsP
@@ -111,7 +111,7 @@ public class ClientView implements java.util.Observer
 		log.setEditable(false);
 				
 		//impostazioni generali della finestra
-		frame.setSize(400, 400);
+		frame.setSize(412, 402);
 		frame.setVisible(true);
 		frame.setResizable(false);
 		//frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -141,12 +141,17 @@ public class ClientView implements java.util.Observer
 						
 	} //ClientView
 	
+	//restituisce il campo di ricerca al controller
+	public String getFindText(){return toFind.getText();}
+	
 	//il model notifica la view richiamando questo metodo implementato
 	public void update(Observable obs, Object obj)
 	{
 		//model Pull, quindi richiedo i dati al model ed aggiorno la vista:
 		frame.setTitle("Client " + model.getClientName() + " per " + model.getServer2Connect());
-		
+		disconnectB.setText(model.getDisconnectBtext());
+		disconnectB.setEnabled(model.getDisconnectBenabled());
+		findB.setEnabled(model.getFindBenabled());
 		log.setText(model.getLogText());		
 	} 
 		
@@ -157,6 +162,7 @@ public class ClientView implements java.util.Observer
 		disconnectB.addActionListener(controller);
 	}
 	
+	//setta il riferimento al model
 	public void addModel(ClientModel _model)
 	{
 		this.model = _model;
