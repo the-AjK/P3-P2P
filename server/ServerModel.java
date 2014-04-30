@@ -12,7 +12,8 @@
 \****************************************************************************************/
 package server;
 
-import java.util.*; 		//vector
+import java.util.Vector; 		//vector
+import java.awt.Color;			//color
 
 public class ServerModel extends java.util.Observable 
 {
@@ -21,9 +22,9 @@ public class ServerModel extends java.util.Observable
 	private String clients;			//clients connessi
 	private String servers;			//server connessi
 	private Vector<String> log;		//log di sistema
+	private Color coloreLog;		//colore testo della casella log
 	
-	//dati del server
-	
+	//dati del server	
 	
 	//costruttore
 	public ServerModel()
@@ -65,7 +66,15 @@ public class ServerModel extends java.util.Observable
 		setChanged();
 		notifyObservers();//model pull
 	}
-
+	
+	public Color getLogColor(){return coloreLog;}
+	public void setLogColor(Color _color)
+	{
+		coloreLog = _color;
+		setChanged();
+		notifyObservers();//model pull
+	}
+	
 	
 
-}//end class ServerModel
+}//end class ServerModel()

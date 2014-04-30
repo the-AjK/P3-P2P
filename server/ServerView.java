@@ -93,7 +93,7 @@ public class ServerView implements java.util.Observer
 		
 		
 		
-	}
+	} //ServerView()
 	
 	//il model notifica la view richiamando questo metodo implementato
 	public void update(Observable obs, Object obj)
@@ -103,11 +103,12 @@ public class ServerView implements java.util.Observer
 		clients.setText(model.getClientsText());
 		servers.setText(model.getServersText());
 		log.setText(model.getLogText());
+		log.setForeground(model.getLogColor());
 	} 
 	
 	public void addController(ActionListener controller)
 	{
-		//button.addActionListener(controller);	//need instance of controller before can add it as a listener 
+		//button.addActionListener(controller);	
 	}
 	
 	public void addModel(ServerModel _model)
@@ -123,4 +124,4 @@ public class ServerView implements java.util.Observer
 		} 
 	} 	
 		
-}//end class ServerView
+}//end class ServerView()

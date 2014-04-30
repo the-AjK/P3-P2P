@@ -14,7 +14,8 @@ package server;
 
 import java.rmi.*;
 import java.rmi.server.*;
-//import java.util.*; 		//vector
+import java.awt.Color;			//color
+//import java.util.*; 			//vector
 //import java.io.*; 			//IO exceptions
 //import java.net.MalformedURLException;	//malformedURLexception
 
@@ -170,6 +171,7 @@ public class ServerController extends UnicastRemoteObject implements IServer, ja
 		model.addLogText("ricerca server online...");
 		
 		//log.append("inizializzazione del server " + nome + " completata!\n");
+		model.setLogColor(Color.BLUE);
 	}
 
-}//end class
+}//end class ServerController()
