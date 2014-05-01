@@ -15,16 +15,51 @@ import server.IServer;
 
 public class DeviceServer
 {
+	//campi dati
 	private String nomeServer;	//nome del server
-	private IServer ref;		//riferimento remoto del server
+	private IServer ref;		//riferimento del server
 	
+	/****************************************************************************************\
+	|	public DeviceServer()
+	|	description: costruttore senza parametri
+	\****************************************************************************************/
+	public DeviceServer()
+	{
+		this("",null);
+	}
+	
+	/****************************************************************************************\
+	|	public DeviceServer(String _nomeServer, IServer _ref)
+	|	description: costruttore a due parametri
+	\****************************************************************************************/
 	public DeviceServer(String _nomeServer, IServer _ref)
 	{
 		nomeServer = _nomeServer;
 		ref = _ref;	
 	}
 	
+	/****************************************************************************************\
+	|	public String getName()
+	|	description: restituisce il nome del server
+	\****************************************************************************************/
 	public String getName(){return nomeServer;}
-	public IServer getRef(){return ref;}	
+	
+	/****************************************************************************************\
+	|	public void setName(String _nomeServer)
+	|	description: setta il nome del server
+	\****************************************************************************************/
+	public void setName(String _nomeServer){nomeServer = _nomeServer;}
+	
+	/****************************************************************************************\
+	|	public IServer getRef()
+	|	description: restituisce il riferimento del server
+	\****************************************************************************************/
+	public IServer getRef(){return ref;}
+
+	/****************************************************************************************\
+	|	public void setRef(IServer _ref)
+	|	description: restituisce il riferimento del server
+	\****************************************************************************************/
+	public void setRef(IServer _ref){ref = _ref;}
 
 } //end class DeviceServer

@@ -20,6 +20,19 @@ public class DeviceClient
 	private IClient ref;				//riferimento remoto del client
 	private Vector<Resource> risorse;	//lista di risorse del client
 	
+	/****************************************************************************************\
+	|	public DeviceClient()
+	|	description: costruttore senza parametri
+	\****************************************************************************************/
+	public DeviceClient()
+	{
+		this("",null,null);
+	}
+	
+	/****************************************************************************************\
+	|	public DeviceClient(String _nomeClient, IClient _ref, Vector<Resource> _risorse)
+	|	description: costruttore a tre parametri
+	\****************************************************************************************/
 	public DeviceClient(String _nomeClient, IClient _ref, Vector<Resource> _risorse)
 	{
 		nomeClient = _nomeClient;
@@ -32,22 +45,63 @@ public class DeviceClient
 		}
 	}
 	
+	/****************************************************************************************\
+	|	public String getName()
+	|	description: restituisce il nome del client
+	\****************************************************************************************/
 	public String getName(){return nomeClient;}
+	
+	/****************************************************************************************\
+	|	public void setName(String _nomeClient)
+	|	description: setta il nome del client
+	\****************************************************************************************/
+	public void setName(String _nomeClient){nomeClient = _nomeClient;}
+	
+	/****************************************************************************************\
+	|	public IClient getRef()
+	|	description: restituisce il riferimento del client
+	\****************************************************************************************/
 	public IClient getRef(){return ref;}
-	public Resource getResource(int nrisorsa)
+	
+	/****************************************************************************************\
+	|	public void setRef(IClient _ref)
+	|	description: setta il riferimento del client
+	\****************************************************************************************/
+	public void setRef(IClient _ref){ref = _ref;}
+	
+	/****************************************************************************************\
+	|	public int getNresource()
+	|	description: restituisce il numero di risorse del client
+	\****************************************************************************************/
+	public int getNresource(){return risorse.size();}
+	
+	/****************************************************************************************\
+	|	public Resource getResource(int nrisorsa)
+	|	description: restituisce la risorsa indicata
+	\****************************************************************************************/
+	public Resource getResource(int _nrisorsa)
 	{
-		if(nrisorsa < risorse.size())
+		if(_nrisorsa < risorse.size())
 		{
-			return risorse.get(nrisorsa);
+			return risorse.get(_nrisorsa);
 		}else{
 			return null;
 		}
 	}
-	public Vector<Resource> getResourceList(){return risorse;}
-	public void addResource(Resource r)
-	{
-		risorse.add(r);
-	}
 	
+	/****************************************************************************************\
+	|	public Vector<Resource> getResourceList()
+	|	description: restituisce la lista di risorse
+	\****************************************************************************************/
+	public Vector<Resource> getResourceList(){return risorse;}
+	
+	/****************************************************************************************\
+	|	public void addResource(Resource _r)
+	|	description: aggiunge una risorsa alla lista di risorse
+	\****************************************************************************************/
+	public void addResource(Resource _r)
+	{
+		risorse.add(_r);
+	}
 
 } //end class DeviceClient

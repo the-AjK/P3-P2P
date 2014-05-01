@@ -11,20 +11,13 @@
 \****************************************************************************************/
 package client;
 
-//import java.rmi.*;
-//import java.io.*;
-//import java.util.*;
 import javax.swing.*;
 import javax.swing.text.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.event.ActionListener;
-import java.util.Observable; //per update();
+import java.util.Observable; 
 
-/****************************************************************************************\
-|	public class ClientView
-|	description: gestisce la creazione della GUI.
-\****************************************************************************************/
 public class ClientView implements java.util.Observer
 { 
 	//riferimento al model
@@ -39,6 +32,10 @@ public class ClientView implements java.util.Observer
 	private JButton disconnectB;		//pulsante di disconnessione
 	private JButton findB;				//pulsante di ricerca
 	
+	/****************************************************************************************\
+	|	public ClientView() 
+	|	description: costruttore
+	\****************************************************************************************/
 	public ClientView() throws Exception 
 	{ 
 		//imposto il layout principale
@@ -141,13 +138,20 @@ public class ClientView implements java.util.Observer
 						
 	} //ClientView
 	
-	//restituisce il campo di ricerca al controller
+	/****************************************************************************************\
+	|	public String getFindText()
+	|	description: restituisce il campo di ricerca al controller
+	\****************************************************************************************/
 	public String getFindText(){return toFind.getText();}
 	
-	//il model notifica la view richiamando questo metodo implementato
-	public void update(Observable obs, Object obj)
+	/****************************************************************************************\
+	|	public void update(Observable _obs, Object _obj)
+	|	description: implementazione dell'observer, metodo richiamato per eseguire il refresh
+	|				 della GUI in modalità "model-pull", la view usa il riferimento al model
+	|				 per andare a leggere e recuperare i campi dati da visualizzare.
+	\****************************************************************************************/
+	public void update(Observable _obs, Object _obj)
 	{
-		//model Pull, quindi richiedo i dati al model ed aggiorno la vista:
 		frame.setTitle("Client " + model.getClientName() + " per " + model.getServer2Connect());
 		disconnectB.setText(model.getDisconnectBtext());
 		disconnectB.setEnabled(model.getDisconnectBenabled());
@@ -155,19 +159,26 @@ public class ClientView implements java.util.Observer
 		log.setText(model.getLogText());		
 	} 
 		
-	//aggiungo il controller come actionListener per i pulsanti
-	public void addController(ActionListener controller)
+	/****************************************************************************************\
+	|	public void addController(ActionListener _controller)
+	|	description: permette di aggiungere un controller come ActionListener alla view
+	\****************************************************************************************/
+	public void addController(ActionListener _controller)
 	{
-		findB.addActionListener(controller); 
-		disconnectB.addActionListener(controller);
+		findB.addActionListener(_controller); 
+		disconnectB.addActionListener(_controller);
 	}
 	
-	//setta il riferimento al model
-	public void addModel(ClientModel _model)
-	{
-		this.model = _model;
-	}
+	/****************************************************************************************\
+	|	public void addModel(ClientModel _model)
+	|	description: setta il riferimento al model
+	\****************************************************************************************/
+	public void addModel(ClientModel _model){model = _model;}
 	
+	/****************************************************************************************\
+	|	public static class CloseListener
+	|	description: classe interna per gestire la chiusura della GUI
+	\****************************************************************************************/
 	public static class CloseListener extends WindowAdapter
 	{
 		public void windowClosing(WindowEvent e) {

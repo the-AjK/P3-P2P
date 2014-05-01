@@ -10,12 +10,12 @@
 \****************************************************************************************/
 package client;
 
-/****************************************************************************************\
-|	public class ClientStarter
-|	description: avvia il client
-\****************************************************************************************/
 public class ClientStarter
 { 
+	/****************************************************************************************\
+	|	public ClientStarter(String _nomeClient, String _server2connect, int _D, String[] _R)
+	|	description: costruttore
+	\****************************************************************************************/
 	public ClientStarter(	String _nomeClient,		//nome client
 							String _server2connect,	//nome server
 							int _D, 				//disponibilità download
@@ -71,7 +71,6 @@ public class ClientStarter
 												Integer.parseInt(args[2]),	//capacità di download
 												risorse			//stringhe (nome risorsa + n_parti)
 											  );
-		
 		}
 		catch(Exception e)
 		{ 

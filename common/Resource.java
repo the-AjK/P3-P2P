@@ -15,6 +15,10 @@ import java.util.Vector;
 
 public class Resource
 {
+	/****************************************************************************************\
+	|	private class ResourcePart 
+	|	description: classe interna rappresentante una parte di risorsa
+	\****************************************************************************************/
 	private class ResourcePart 
 	{
 		public String part;
@@ -24,9 +28,14 @@ public class Resource
 		}
 	}
 	
+	//campi dati
 	private String nomeRisorsa;						//nome della risorsa
 	private Vector<ResourcePart> partiRisorsa;		//parti della risorsa 
 	
+	/****************************************************************************************\
+	|	public Resource(String _nomeRisorsa, int _nparti)
+	|	description: costruttore
+	\****************************************************************************************/
 	public Resource(String _nomeRisorsa, int _nparti)
 	{
 		nomeRisorsa = _nomeRisorsa;
@@ -37,10 +46,22 @@ public class Resource
 		}
 	}
 	
+	/****************************************************************************************\
+	|	public String getName()
+	|	description: restituisce il nome della risorsa
+	\****************************************************************************************/
 	public String getName(){return nomeRisorsa;}
 	
+	/****************************************************************************************\
+	|	public int getNparts()
+	|	description: restituisce il numero di parti che compongono la risorsa
+	\****************************************************************************************/
 	public int getNparts(){return partiRisorsa.size();}
 	
+	/****************************************************************************************\
+	|	public String getPart(int _n)
+	|	description: restituisce la parte della risorsa indicata
+	\****************************************************************************************/
 	public String getPart(int _n)
 	{
 		if(_n < partiRisorsa.size())
@@ -51,6 +72,10 @@ public class Resource
 		}	
 	}
 	
+	/****************************************************************************************\
+	|	public void setPart(int _n, String _value)
+	|	description: setta la parte di risorsa indicata con un determinato valore (_value)
+	\****************************************************************************************/
 	public void setPart(int _n, String _value)
 	{
 		if(_n < partiRisorsa.size())

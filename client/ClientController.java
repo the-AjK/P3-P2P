@@ -14,11 +14,9 @@ package client;
 
 import java.rmi.*;
 import java.rmi.server.*;
-//import java.util.*; 		//vector
-//import java.io.*; 			//IO exceptions
-//import java.net.MalformedURLException;	//malformedURLexception
-
-//import client.IClient;
+import java.util.Vector; 
+import java.awt.Color;
+import common.Resource;
 
 public class ClientController extends UnicastRemoteObject implements IClient, java.awt.event.ActionListener
 {
@@ -29,19 +27,24 @@ public class ClientController extends UnicastRemoteObject implements IClient, ja
 	private static final String CONNECTION_BUTTON_TEXT = "in connessione...";
 	private static final String FIND_BUTTON_TEXT = "Cerca e Scarica";
 
-	
 	//riferimenti alle componenti View e Model
 	private ClientView view;
 	private ClientModel model;
 	
-	//costruttore
+	/****************************************************************************************\
+	|	public ClientController() 
+	|	description: costruttore
+	\****************************************************************************************/
 	public ClientController() throws Exception 
 	{
 		
-		
 	}
 	
-	public void actionPerformed(java.awt.event.ActionEvent e)
+	/****************************************************************************************\
+	|	public void actionPerformed(java.awt.event.ActionEvent _e)
+	|	description: gestore degli input utenti provenienti dalla componente view
+	\****************************************************************************************/
+	public void actionPerformed(java.awt.event.ActionEvent _e)
 	{
 		/*System.out.println ("Controller Client: The " + e.getActionCommand() 
 			+ " button is clicked at " + new java.util.Date(e.getWhen())
@@ -54,7 +57,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, ja
 		e.paramString() = ACTION_PERFORMED,cmd=Cerca e Scarica,when=1398841678102,modifiers=Button1
 		*/
 		
-		switch(e.getActionCommand())
+		switch(_e.getActionCommand())
 		{
 			case FIND_BUTTON_TEXT:
 				System.out.println("cerca" + view.getFindText());
@@ -70,30 +73,73 @@ public class ClientController extends UnicastRemoteObject implements IClient, ja
 		}
 	}
 	
-	//metodi per impostare i riferimenti al model ed alla view
-	public void addModel(ClientModel _model)
-	{
-		this.model = _model;
-	}
+	/****************************************************************************************\
+	|	public void addModel(ClientModel _model)
+	|	description: setta il riferimento alla componente model
+	\****************************************************************************************/
+	public void addModel(ClientModel _model){model = _model;}
 
-	public void addView(ClientView _view)
-	{
-		this.view = _view;
-	}
+	/****************************************************************************************\
+	|	public void addView(ClientView _view)
+	|	description: setta il riferimento alla componente view
+	\****************************************************************************************/
+	public void addView(ClientView _view){view = _view;}
 
+	/****************************************************************************************\
+	|	public void initModel(String _nomeClient, String _server2connect, int _D, String[] _R)
+	|	description: inizializza la componente model all'avvio del client
+	\****************************************************************************************/
 	public void initModel(String _nomeClient, String _server2connect, int _D, String[] _R)
 	{
 		model.setClientName(_nomeClient);
+		model.setClientRef(this);
 		model.setServer2Connect(_server2connect);
 		model.setDownloadCapacity(_D);
-		//model.setResources(_R);		
-		
+
+		//carico le risorse
+		int partiRisorsa;
+		for(int i=0; i<_R.length; i+=2)
+		{
+			try
+			{
+				partiRisorsa=Integer.parseInt(_R[i+1]);		//provo a convertire il numero di parti della risorsa
+			}catch(NumberFormatException nfe)
+			{
+				continue;									//se non è un valore numerico non la considero
+			}
+			if(partiRisorsa==0){continue;}					//risorse con zero parti non le considero
+			
+			//se la risorsa va bene, la aggiungo 
+			model.addResource(new Resource(_R[i],partiRisorsa));
+		}
+				
 		model.setLogColor(Color.RED);
 		model.setDisconnectBtext(CONNECT_BUTTON_TEXT);
 		model.setDisconnectBenabled(true);
 		model.setFindBenabled(true);
 		model.addLogText("inizializzazione completata.");
 		model.addLogText("connessione automatica avviata...");
+	}
+	
+	/****************************************************************************************\
+	|	public String heartbeat() 
+	|	description: implementazione del metodo remoto dell'interfaccia IClient
+	\****************************************************************************************/
+	public String heartbeat() throws RemoteException
+	{
+		return "JK-CLIENT-OK";	//restituisco la stringa JK per confermare che sono online
+	}
+	
+	/****************************************************************************************\
+	|	public Vector<Resource> getResourceList()
+	|	description: implementazione del metodo remoto dell'interfaccia IClient
+	\****************************************************************************************/
+	public Vector<Resource> getResourceList() throws RemoteException
+	{
+		synchronized(model)
+		{
+			return model.getResourceList();		
+		}
 	}
 
 }//end class ClientController()

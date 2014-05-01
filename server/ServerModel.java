@@ -7,49 +7,169 @@
 |	Description: componente model del pattern MVC
 |	Package: server
 |	Version: 0.1 - creazione struttura scheletro
-|			 0.2 - 
+|			 1.0 - aggiunti campi dati e relativi metodi set/get
 |
 \****************************************************************************************/
 package server;
 
 import java.util.Vector; 		
-import java.awt.Color;			
+import java.awt.Color;	
+import client.IClient;		
 import common.DeviceClient;
 import common.DeviceServer;
+import common.Resource;
 
 public class ServerModel extends java.util.Observable 
 {
-	//dati interfaccia grafica
-	private String serverName;				//nome del server
+	//campi dati
+	private DeviceServer me;				//contiene nome del server e riferimento
 	private Vector<DeviceClient> clients;	//clients connessi
 	private Vector<DeviceServer> servers;	//server connessi
 	private Vector<String> log;				//log di sistema
 	private Color coloreLog;				//colore testo della casella log
 	
-	//dati del server	
-	
-	//costruttore
+	/****************************************************************************************\
+	|	public ServerModel()
+	|	description: costruttore del model
+	\****************************************************************************************/
 	public ServerModel()
 	{	
 		//inizializzo i campi dati
-		serverName = "JK :)";
+		me = new DeviceServer("",null); 	//creo me stesso :)
 		clients = new Vector<DeviceClient>();
 		servers = new Vector<DeviceServer>();
 		log = new Vector<String>();
 		log.add("P3-P2P Server (C) JK");
 	}
-
-	//metodi usati dalla view e controller per recuperare e/o modificare i dati del model	
-	public String getServerName(){return serverName;}
 	
-	public void setServerName(String _nome)
+	/****************************************************************************************\
+	|	public void viewRefresh()
+	|	description: notifica la parte view in modalità "model-pull"
+	\****************************************************************************************/
+	private void viewRefresh()
 	{
-		serverName = _nome;
 		setChanged();
-		notifyObservers();//model pull
+		notifyObservers();
+	}
+
+	/****************************************************************************************\
+	|	public String getServerName()
+	|	description: restituisce il nome del server
+	\****************************************************************************************/	
+	public String getServerName(){return me.getName();}
+	
+	/****************************************************************************************\
+	|	public IServer getServerRef()
+	|	description: restituisce il riferimento del server
+	\****************************************************************************************/	
+	public IServer getServerRef(){return me.getRef();}
+	
+	/****************************************************************************************\
+	|	public void setServerRef(IServer _ref)
+	|	description: setta il riferimento del server
+	\****************************************************************************************/	
+	public void setServerRef(IServer _ref){me.setRef(_ref);}
+	
+	/****************************************************************************************\
+	|	public int getNclients()
+	|	description: restituisce il numero di client connessi al server
+	\****************************************************************************************/
+	public int getNclients(){return clients.size();}
+	
+	/****************************************************************************************\
+	|	public int getNservers()
+	|	description: restituisce il numero di server connessi
+	\****************************************************************************************/
+	public int getNservers(){return servers.size();}
+	
+	/****************************************************************************************\
+	|	public Vector<DeviceServer> getServerList()
+	|	description: restituisce la lista dei server connessi
+	\****************************************************************************************/
+	public Vector<DeviceServer> getServerList(){return servers;}
+	
+	/****************************************************************************************\
+	|	public Vector<DeviceClient> getClientList()
+	|	description: restituisce la lista dei clients connessi al server
+	\****************************************************************************************/
+	public Vector<DeviceClient> getClientList(){return clients;}
+	
+	/****************************************************************************************\
+	|	public void removeServer(String _server2remove)
+	|	description: rimuove il server specificato dalla lista di servers
+	\****************************************************************************************/	
+	public void removeServer(String _server2remove)
+	{
+		for(int i=0; i<servers.size(); i++)
+		{
+			if(servers.get(i).getName().equals(_server2remove))
+			{
+				servers.remove(i);
+				break;
+			}		
+		}	
+		viewRefresh();
 	}
 	
-	//converte un vector di stringhe in un'unica stringa
+	/****************************************************************************************\
+	|	public void removeClient(String _client2remove)
+	|	description: rimuove il client specificato dalla lista di clients 
+	\****************************************************************************************/
+	public void removeClient(String _client2remove)
+	{
+		for(int i=0; i<clients.size(); i++)
+		{
+			if(clients.get(i).getName().equals(_client2remove))
+			{
+				clients.remove(i);
+				break;
+			}		
+		}	
+		viewRefresh();
+	}
+	
+	/****************************************************************************************\
+	|	public DeviceServer getServer(int _n)
+	|	description: restituisce il DeviceServer specificato 
+	\****************************************************************************************/
+	public DeviceServer getServer(int _n)
+	{
+		if(_n < servers.size())
+		{
+			return servers.get(_n);
+		}else{
+			return null;
+		}	
+	}
+	
+	/****************************************************************************************\
+	|	public DeviceClient getClient(int _n)
+	|	description: restituisce il DeviceClient specificato 
+	\****************************************************************************************/
+	public DeviceClient getClient(int _n)
+	{
+		if(_n < clients.size())
+		{
+			return clients.get(_n);
+		}else{
+			return null;
+		}	
+	}	
+	
+	/****************************************************************************************\
+	|	public void setServerName(String _nome)
+	|	description: setta il nome del server
+	\****************************************************************************************/
+	public void setServerName(String _nome)
+	{
+		me.setName(_nome);
+		viewRefresh();
+	}
+	
+	/****************************************************************************************\
+	|	private String vector2String(Vector<String> v)
+	|	description: converte un vector di stringhe in un'unica stringa
+	\****************************************************************************************/
 	private String vector2String(Vector<String> v)
 	{
 		String res = "";
@@ -60,6 +180,10 @@ public class ServerModel extends java.util.Observable
 		return res;
 	}
 	
+	/****************************************************************************************\
+	|	public String getClientsText()
+	|	description: restituisce la lista di clients sottoforma di stringa per la GUI
+	\****************************************************************************************/
 	public String getClientsText()
 	{
 		String res = "";
@@ -70,6 +194,10 @@ public class ServerModel extends java.util.Observable
 		return res;
 	}	
 	
+	/****************************************************************************************\
+	|	public String getServersText()
+	|	description: restituisce la lista di servers sottoforma di stringa per la GUI
+	\****************************************************************************************/
 	public String getServersText()
 	{
 		String res = "";
@@ -80,30 +208,56 @@ public class ServerModel extends java.util.Observable
 		return res;
 	}
 	
+	/****************************************************************************************\
+	|	public String getLogText()
+	|	description: restituisce la lista dei log sottoforma di stringa per la GUI
+	\****************************************************************************************/
 	public String getLogText(){return vector2String(log);}
 	
+	/****************************************************************************************\
+	|	public void addServer(String _nomeServer, IServer _ref)
+	|	description: aggiunge un server alla lista di servers
+	\****************************************************************************************/
 	public void addServer(String _nomeServer, IServer _ref)
 	{
-		servers.add(new DeviceServer(_nomeServer,_ref)); //aggiungo un server alla lista di server
-		setChanged();
-		notifyObservers();//model pull
+		servers.add(new DeviceServer(_nomeServer,_ref)); 
+		viewRefresh();
 	}
 	
-	public void addLogText(String logLine)
+	/****************************************************************************************\
+	|	public void addClient(String _nomeClient, IClient _ref, Vector<Resource> _listaRisorse)
+	|	description: aggiunge un client alla lista dei clients
+	\****************************************************************************************/
+	public void addClient(String _nomeClient, IClient _ref, Vector<Resource> _listaRisorse)
 	{
-		log.add(logLine);
-		setChanged();
-		notifyObservers();//model pull
+		clients.add(new DeviceClient(_nomeClient,_ref,_listaRisorse));
+		viewRefresh();
 	}
 	
+	/****************************************************************************************\
+	|	public void addLogText(String _logLine)
+	|	description: aggiunge una riga ai log
+	\****************************************************************************************/
+	public void addLogText(String _logLine)
+	{
+		log.add(_logLine);
+		viewRefresh();
+	}
+	
+	/****************************************************************************************\
+	|	public Color getLogColor()
+	|	description: restituisce il colore del testo dei log
+	\****************************************************************************************/
 	public Color getLogColor(){return coloreLog;}
+	
+	/****************************************************************************************\
+	|	public Color setLogColor()
+	|	description: setta il colore del testo dei log
+	\****************************************************************************************/
 	public void setLogColor(Color _color)
 	{
 		coloreLog = _color;
-		setChanged();
-		notifyObservers();//model pull
-	}
-	
-	
+		viewRefresh();
+	}	
 
 }//end class ServerModel()

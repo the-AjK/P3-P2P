@@ -10,12 +10,12 @@
 \****************************************************************************************/
 package server;
 
-/****************************************************************************************\
-|	public class ServerStarter
-|	description: avvia il server
-\****************************************************************************************/
 public class ServerStarter
 { 
+	/****************************************************************************************\
+	|	public ServerStarter(String _nomeServer)
+	|	description: costruttore
+	\****************************************************************************************/
 	public ServerStarter(String _nomeServer) throws Exception 
 	{ 
 		//creo le varie componenti del pattern MVC

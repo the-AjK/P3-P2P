@@ -7,20 +7,18 @@
 |	Description: componente controller del pattern MVC
 |	Package: server
 |	Version: 0.1 - creazione struttura scheletro
-|			 0.2 - 
+|			 0.2 - implementata ricerca server online leggendo il registro RMI
+|			 0.3 - connessione automatica dei server online
+|			 0.4 - creazione del thread checkConnections per eliminare i server offline
 |
 \****************************************************************************************/
 package server;
 
 import java.rmi.*;
 import java.rmi.server.*;
-import java.awt.Color;			//color
-//import java.util.*; 			//vector
-//import java.io.*; 			//IO exceptions
-//import java.net.MalformedURLException;	//malformedURLexception
-
-//import client.IClient;
-
+import java.awt.Color;		
+import java.util.Vector; 	
+import client.IClient;
 import common.DeviceServer;
 import common.DeviceClient;
 import common.Resource;
@@ -28,94 +26,153 @@ import common.Resource;
 public class ServerController extends UnicastRemoteObject implements IServer, java.awt.event.ActionListener
 {
 	private static final String HOST = "localhost:1099";	//host per la connessione RMI
-	private static final String RMITAG = "P3-P2P-JK"; 		//chiave identificativa per il registro RMI
+	private static final String RMITAG = "P3-P2P-JK"; 		//chiave identificativa dei server per il registro RMI
 			
 	//riferimenti alle componenti View e Model
 	private ServerView view;
 	private ServerModel model;
 	
-	//nome del server
-	//private String nomeServer;
+	//threads del server
+	Thread checkConnections;								//thread che controlla i devices connessi
 	
-	//lista di clients connessi e relative risorse
-	//private Vector<ClientsResourceList> clientList;
-	
-	//lista di server connessi
-	//private Vector<String> serverList;
-	
-	//metodo che ritorna il riferimento della lista di risorse un determinato client
-	/*private ClientsResourceList getClientRef(String nomeClient)
-	{
-		for(int i=0; i<clientList.size(); i++)
-		{
-			if(clientList.get(i).getNomeClient().equals(nomeClient))
-				return clientList.get(i);
-		}
-		return null;		
-	}
-	*/
-	
-	//costruttore
+	/****************************************************************************************\
+	|	public ServerController()
+	|	description: costruttore
+	\****************************************************************************************/
 	public ServerController() throws Exception
 	{
 	
 	}
 	
-	public void serverInit() throws Exception
+	/****************************************************************************************\
+	|	public void serverInit()
+	|	description: inizializza il server 
+	\****************************************************************************************/
+	public void serverInit()
 	{
 		//inizio le operazioni di avvio del server...
 		serverRebind(model.getServerName(),this);		//pubblico il mio nome così i clients possono collegarsi
-		model.addLogText("server " + model.getServerName() + " pronto!");
+		model.addLogText("server " + model.getServerName() + " inizializzato!");
 		model.setLogColor(Color.BLUE);
 		connect2server();								//controllo i server online e mi connetto ad essi
+		threadInit();									//inizializzo i thread che girano in background
 	}
 	
 	/****************************************************************************************\
-	|	method: private void serverRebind(String, ServerController)
+	|	private void threadInit()
+	|	description: inizializza i thread del server e li avvia
+	\****************************************************************************************/
+	private void threadInit() 
+	{
+		//thread con ciclo continuo che controlla le connessioni con RMI, Server e Clients
+		checkConnections = new Thread(){ 
+			public void run()
+			{
+				while(true)
+				{
+					//aspetto tre secondi prima di controllare
+					try{sleep(3000);}catch(InterruptedException ie){}
+					
+					//Controllo la presenza dell'RMI registry
+					try{
+						Naming.list("//" + HOST );
+					}
+					catch(Exception e)
+					{
+						model.setLogColor(Color.RED);
+						model.addLogText("[checkConnections_thread] FATAL ERROR! connessione RMI non riuscita.");
+						model.addLogText("[checkConnections_thread] server auto-shutdown tra 30sec...");	
+						try{sleep(30000);}catch(InterruptedException ie){}
+						System.exit(-1);
+					}
+					
+					//controllo i server connessi alla ricerca di server morti :)
+					synchronized(model)	//prendo il lock sui dati del model
+					{
+						//ora controllo che tutta la mia lista server a cui sono connesso 
+						//siano ancora online
+						for(int i=0; i<model.getNservers(); i++)
+						{
+							try{
+								model.getServer(i).getRef().heartbeat();		//controllo se il server è vivo
+							}catch(Exception e){
+								model.addLogText("[checkConnections_thread] il server " + model.getServer(i).getName() + " è offline.");
+								model.removeServer(model.getServer(i).getName());
+							}		
+						}					
+					}//end synchronized(model)
+					
+					//controllo i clients connessi alla ricerca di clients morti :)
+					synchronized(model)	//prendo il lock sui dati del model
+					{
+						for(int i=0; i<model.getNclients(); i++)
+						{
+							try{
+								model.getClient(i).getRef().heartbeat();		//controllo se il client è vivo
+							}catch(Exception e){
+								model.addLogText("[checkConnections_thread] il client " + model.getClient(i).getName() + " è offline.");
+								model.removeClient(model.getClient(i).getName());
+							}		
+						}					
+					}//end synchronized(model)				
+				
+				}//end while(1)
+			}// end run()
+		};
+		checkConnections.start();	//avvio il thread
+	}
+	
+	/****************************************************************************************\
+	|	private void serverRebind(String, ServerController)
 	|	description: pubblica il proprio nome e riferimento sul registro RMI
 	\****************************************************************************************/
-	private void serverRebind(String server2rebind, ServerController ref) throws Exception
+	private void serverRebind(String server2rebind, ServerController ref)
 	{
 		String rmiObjName = "rmi://" + HOST + "/" + RMITAG + "/" + server2rebind;
-		Naming.rebind(rmiObjName, ref);
+		try{
+			Naming.rebind(rmiObjName, ref);
+		}catch(Exception e){
+			model.setLogColor(Color.RED);
+			model.addLogText("FATAL ERROR! connessione RMI non riuscita.");
+			model.addLogText("server auto-shutdown tra 30sec...");	
+			try{Thread.sleep(30000);}catch(InterruptedException ie){}
+			System.exit(-1);					
+		}
 	}
 	
 	/****************************************************************************************\
-	|	method: private IServer serverLookup(String)
+	|	private IServer serverLookup(String)
 	|	description: esegue il lookup del nome server nel registro RMI e ritorna il riferimento
 	\****************************************************************************************/
-	private IServer serverLookup(String nome) throws Exception
+	private IServer serverLookup(String nome)
 	{
 		IServer ref = null;
-		ref = (IServer) Naming.lookup("rmi://" + HOST + "/" + RMITAG + "/" + nome);
+		try{
+			ref = (IServer) Naming.lookup("rmi://" + HOST + "/" + RMITAG + "/" + nome);
+		}catch(Exception e){
+			model.setLogColor(Color.RED);
+			model.addLogText("FATAL ERROR! connessione RMI non riuscita.");
+			model.addLogText("server auto-shutdown tra 30sec...");	
+			try{Thread.sleep(30000);}catch(InterruptedException ie){}
+			System.exit(-1);					
+		}
 		return ref;	
 	}
 	
-	/*private IClient lookupClient(String nome)
+	/****************************************************************************************\
+	|	private String rmitag2name(String _rmitag, String _rmiString)
+	|	description: estra il nome del server che segue il TAG RMI nella stringa indicata
+	\****************************************************************************************/
+	private String rmitag2name(String _rmitag, String _rmiString)
 	{
-		IClient ref = null;
-		for(int i=0; i<clientList.size(); i++)
-		{
-			if(clientList.get(i).getNomeClient().compareTo(nome)==0)
-			{
-				ref = clientList.get(i).getRefC(); //prendo il riferimento all'oggetto remoto
-				break;
-			}
-		}
-		return ref;		
-	}
-	*/
-	
-	private String RMITAG2ServerName(String _rmiString)
-	{
-		return _rmiString.substring(_rmiString.indexOf(RMITAG + "/") + RMITAG.length() + 1, _rmiString.length());
+		return _rmiString.substring(_rmiString.indexOf(_rmitag + "/") + _rmitag.length() + 1, _rmiString.length());
 	}
 	
 	/****************************************************************************************\
-	|	function: private void connect2server()
+	|	private void connect2server()
 	|	description: cerca di recuperare la lista server nel registro RMI e si connette ad essi
 	\****************************************************************************************/
-	private void connect2server() throws Exception
+	private void connect2server()
 	{
 		String[] serverNamesList = {};	
 			
@@ -125,81 +182,146 @@ public class ServerController extends UnicastRemoteObject implements IServer, ja
 		try{
 			serverNamesList = Naming.list("//" + HOST );
 		}
-		catch(ConnectException e)
+		catch(Exception e)
 		{
-			model.addLogText("impossibile recuperare la lista server!");
-			model.addLogText("errore di connessione al registro RMI!");	
+			model.setLogColor(Color.RED);
+			model.addLogText("FATAL ERROR! connessione RMI non riuscita.");
 			model.addLogText("server auto-shutdown tra 30sec...");	
-			Thread.sleep(30000);
+			try{Thread.sleep(30000);}catch(Exception exc){}
 			System.exit(-1);
 		}
 		
 		IServer ref = null;
-		
+		int serverConnessi = 0;
 		for(int i=0; i<serverNamesList.length; i++)
 		{
-			//controllo se contiene il TAG
-			if(serverNamesList[i].contains(RMITAG + "/"))
+			synchronized(model)		//prendo il lock sui dati del model
 			{
-				String server2connect = RMITAG2ServerName(serverNamesList[i]); 	//recupero il nome del server a cui voglio connettermi
-				if(server2connect.equals(model.getServerName()))continue;		//evito di connettermi a me stesso :) 
-				try{
-					ref = serverLookup(server2connect);							//recupero il riferimento a tale server
-					ref.connectMEServer(model.getServerName()); 				//richiedo di connettermi al server
-				}catch(Exception e){
-					model.addLogText("impossibile contattare il server " + server2connect + "!");
-					ref = null;
-				}
-				if(ref != null)													//se mi sono collegato al server
+				//controllo se contiene il TAG
+				if(serverNamesList[i].contains(RMITAG + "/"))
 				{
-					model.addServer(server2connect,ref);						//aggiorno l'interfaccia grafica
-					model.addLogText("connesso a " + server2connect + "!");
+					String server2connect = rmitag2name(RMITAG, serverNamesList[i]); 	//recupero il nome del server a cui voglio connettermi
+					if(server2connect.equals(model.getServerName()))continue;		//evito di connettermi a me stesso :) 
+					model.addLogText("connessione al server " + server2connect + "...");
+					try{
+						ref = serverLookup(server2connect);							//recupero il riferimento a tale server
+						if(ref.connectMEServer(model.getServerName())) 				//richiedo di connettermi al server
+						{
+							model.addServer(server2connect,ref);					//aggiorno l'interfaccia grafica
+							model.addLogText("connesso a " + server2connect + "!");
+							serverConnessi++;;
+						}
+					}catch(Exception e){
+						model.addLogText("impossibile contattare il server " + server2connect + ", connessione fallita!");
+					}
 				}
-			}
+			}//synchronized(model)
 		}
+		int serverTrovati = serverNamesList.length;
+		if(serverTrovati > 0) serverTrovati--;				//rimuovo me stesso
+		model.addLogText("ricerca server online completata! trovati " + serverTrovati + " server di cui " + serverConnessi + " online.");
 		
 	} //connect2server()
 	
-	public void actionPerformed(java.awt.event.ActionEvent e)
+	/****************************************************************************************\
+	|	public void actionPerformed(java.awt.event.ActionEvent _e)
+	|	description: gestore degli input utenti provenienti dalla componente view
+	\****************************************************************************************/
+	public void actionPerformed(java.awt.event.ActionEvent _e)
 	{
-		System.out.println ("Controller: The " + e.getActionCommand() 
-			+ " button is clicked at " + new java.util.Date(e.getWhen())
-			+ " with e.paramString " + e.paramString() );
+		System.out.println ("Controller: The " + _e.getActionCommand() 
+			+ " button is clicked at " + new java.util.Date(_e.getWhen())
+			+ " with e.paramString " + _e.paramString() );
 	}
 	
-	//metodi per impostare i riferimenti al model ed alla view
-	public void addModel(ServerModel _model)
-	{
-		this.model = _model;
-	}
+	/****************************************************************************************\
+	|	public void addModel(ServerModel _model)
+	|	description: setta il riferimento alla componente model
+	\****************************************************************************************/
+	public void addModel(ServerModel _model){this.model = _model;}
+		
+	/****************************************************************************************\
+	|	public void addView(ServerView _view)
+	|	description: setta il riferimento alla componente view
+	\****************************************************************************************/
+	public void addView(ServerView _view){this.view = _view;}
 
-	public void addView(ServerView _view)
-	{
-		this.view = _view;
-	}
-
+	/****************************************************************************************\
+	|	public void initModel(String _nome)
+	|	description: inizializza la componente model all'avvio del server
+	\****************************************************************************************/
 	public void initModel(String _nome)
 	{
 		model.setServerName(_nome);
+		model.setServerRef(this);
 		model.setLogColor(Color.RED);
-		model.addLogText("inizializzazione server avviata...");		
+		model.addLogText("inizializzazione server...");		
 	}
 	
-	//implemento i metodi dell'interfaccia IServer
-	public void connectMEServer(String _serverName) throws RemoteException
+	/****************************************************************************************\
+	|	public String heartbeat()
+	|	description: implementazione del metodo remoto dell'interfaccia IServer
+	\****************************************************************************************/
+	public String heartbeat() throws RemoteException
+	{
+		return RMITAG;	//restituisco l'RMITAG per confermare che sono online
+	}
+	
+	/****************************************************************************************\
+	|	public boolean connectMEServer(String _serverName)
+	|	description: implementazione del metodo remoto dell'interfaccia IServer
+	\****************************************************************************************/
+	public boolean connectMEServer(String _serverName) throws RemoteException
 	{
 		IServer ref;
 		try{
 			ref = serverLookup(_serverName);
 		}catch(Exception e){
-			model.addLogText("impossibile contattare il server " + _serverName + "!");
+			model.addLogText("[new server] impossibile contattare il server " + _serverName + "!");
 			ref = null;
 		}
 		
 		if(ref != null)
 		{
-			model.addServer(_serverName,ref);					
-			model.addLogText("connesso a " + _serverName + "!");
+			synchronized(model)	//prendo il lock sui dati del model
+			{
+				model.addServer(_serverName,ref);		//aggiungo un nuovo server				
+				model.addLogText("[new server] il server " + _serverName + " si è connesso!");
+			}
+			return true;
+		}else{
+			return false;
+		}
+	}
+	
+	/****************************************************************************************\
+	|	public boolean connectMEClient(String _clientName, IClient _clientRef) 
+	|	description: implementazione del metodo remoto dell'interfaccia IServer
+	\****************************************************************************************/
+	public boolean connectMEClient(String _clientName, IClient _clientRef) throws RemoteException
+	{
+		model.addLogText("[new client] il client " + _clientName + " richiede connessione!");
+			
+		model.addLogText("[new client] recupero lista risorse del client " + _clientName + "...");
+		Vector<Resource> listaRisorse;
+		try{
+			listaRisorse = _clientRef.getResourceList();
+		}catch(Exception e){
+			model.addLogText("[new client] impossibile recuperare la lista risorse!");
+			listaRisorse = null;
+		}
+		
+		if(listaRisorse != null) //se ho recuperato la lista risorse del client
+		{
+			synchronized(model)	//prendo il lock sui dati del model
+			{
+				model.addClient(_clientName,_clientRef,listaRisorse);	//aggiungo un nuovo client			
+				model.addLogText("[new client] il client " + _clientName + " si è connesso!");
+			} 	
+			return true;
+		}else{
+			model.addLogText("[new client] connessione con il client " + _clientName + " fallita!");
+			return false;
 		}
 	}
 
