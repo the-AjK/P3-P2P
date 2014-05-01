@@ -22,8 +22,9 @@ import client.IClient;
 import common.DeviceServer;
 import common.DeviceClient;
 import common.Resource;
+import java.awt.event.*;
 
-public class ServerController extends UnicastRemoteObject implements IServer, java.awt.event.ActionListener
+public class ServerController extends UnicastRemoteObject implements IServer, ActionListener, WindowListener
 {
 	private static final String HOST = "localhost:1099";	//host per la connessione RMI
 	private static final String RMITAG = "P3-P2P-JK"; 		//chiave identificativa dei server per il registro RMI
@@ -126,11 +127,11 @@ public class ServerController extends UnicastRemoteObject implements IServer, ja
 	|	private void serverRebind(String, ServerController)
 	|	description: pubblica il proprio nome e riferimento sul registro RMI
 	\****************************************************************************************/
-	private void serverRebind(String server2rebind, ServerController ref)
+	private void serverRebind(String _server2rebind, ServerController _ref)
 	{
-		String rmiObjName = "rmi://" + HOST + "/" + RMITAG + "/" + server2rebind;
+		String rmiObjName = "rmi://" + HOST + "/" + RMITAG + "/" + _server2rebind;
 		try{
-			Naming.rebind(rmiObjName, ref);
+			Naming.rebind(rmiObjName, _ref);
 		}catch(Exception e){
 			model.setLogColor(Color.RED);
 			model.addLogText("FATAL ERROR! connessione RMI non riuscita.");
@@ -141,14 +142,32 @@ public class ServerController extends UnicastRemoteObject implements IServer, ja
 	}
 	
 	/****************************************************************************************\
+	|	private void serverUnbind(String, ServerController)
+	|	description: rimuove il proprio nome e riferimento sul registro RMI
+	\****************************************************************************************/
+	private void serverUnbind(String _server2unbind)
+	{
+		String rmiObjName = "rmi://" + HOST + "/" + RMITAG + "/" + _server2unbind;
+		try{
+			Naming.unbind(rmiObjName);
+		}catch(Exception e){
+			model.setLogColor(Color.RED);
+			model.addLogText("FATAL ERROR! connessione RMI non riuscita.");
+			model.addLogText("server auto-shutdown tra 30sec...");	
+			try{Thread.sleep(30000);}catch(InterruptedException ie){}
+			System.exit(-1);					
+		}
+	}
+		
+	/****************************************************************************************\
 	|	private IServer serverLookup(String)
 	|	description: esegue il lookup del nome server nel registro RMI e ritorna il riferimento
 	\****************************************************************************************/
-	private IServer serverLookup(String nome)
+	private IServer serverLookup(String _nome)
 	{
 		IServer ref = null;
 		try{
-			ref = (IServer) Naming.lookup("rmi://" + HOST + "/" + RMITAG + "/" + nome);
+			ref = (IServer) Naming.lookup("rmi://" + HOST + "/" + RMITAG + "/" + _nome);
 		}catch(Exception e){
 			model.setLogColor(Color.RED);
 			model.addLogText("FATAL ERROR! connessione RMI non riuscita.");
@@ -224,10 +243,38 @@ public class ServerController extends UnicastRemoteObject implements IServer, ja
 	} //connect2server()
 	
 	/****************************************************************************************\
-	|	public void actionPerformed(java.awt.event.ActionEvent _e)
-	|	description: gestore degli input utenti provenienti dalla componente view
+	|	public void windowDeiconified(WindowEvent _e)
+	|	public void windowIconified(WindowEvent _e)
+	|	public void windowClosed(WindowEvent _e)
+	|	public void windowOpened(WindowEvent _e)
+	|	public void windowDeactivated(WindowEvent _e)
+	|	public void windowDeactivated(WindowEvent _e)
+	|	public void windowActivated(WindowEvent _e)
+	|	description: implementazione dell'interfaccia WindowListener
 	\****************************************************************************************/
-	public void actionPerformed(java.awt.event.ActionEvent _e)
+	public void windowDeiconified(WindowEvent _e){}
+	public void windowIconified(WindowEvent _e){}
+	public void windowClosed(WindowEvent _e){}
+	public void windowOpened(WindowEvent _e){}
+	public void windowDeactivated(WindowEvent _e){} //lost focus
+	public void windowActivated(WindowEvent _e){} //get focus
+	
+	/****************************************************************************************\
+	|	public void windowClosing(WindowEvent _e)
+	|	description: implementazione dell'interfaccia WindowListener in chiusura del server
+	\****************************************************************************************/
+	public void windowClosing(WindowEvent _e)
+	{
+		//eseguo l'unbind dal registro RMI
+		serverUnbind(model.getServerName());
+		System.exit(0); 
+	}
+	
+	/****************************************************************************************\
+	|	public void actionPerformed(java.awt.event.ActionEvent _e)
+	|	description: implementazione dell'interfaccia ActionListener
+	\****************************************************************************************/
+	public void actionPerformed(ActionEvent _e)
 	{
 		System.out.println ("Controller: The " + _e.getActionCommand() 
 			+ " button is clicked at " + new java.util.Date(_e.getWhen())

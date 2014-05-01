@@ -111,31 +111,8 @@ public class ClientView implements java.util.Observer
 		frame.setSize(412, 402);
 		frame.setVisible(true);
 		frame.setResizable(false);
-		//frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-		frame.addWindowListener(new WindowAdapter()
-						 {
-							public void windowClosing(WindowEvent e)
-							{
-								/*log.append("chiusura client in corso...\n");
-								if(disconnectB.getText()=="Disconnetti") //se sono connesso
-								{
-									try
-									{ 							//alla chiusura del client
-										client.disconnetti(); //richiamo il metodo del client per disconnettersi
-										//ora faccio unbind al registro RMI! per togliermi!
-										Naming.unbind("rmi://localhost/" + nomeClient);
-									}
-									catch(Exception re)
-									{
-									}
-									
-								}
-								log.append("Bye bye :)\n");
-								*/
-								System.exit(0);
-							}
-						});
-						
+		frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+		
 	} //ClientView
 	
 	/****************************************************************************************\
@@ -163,10 +140,19 @@ public class ClientView implements java.util.Observer
 	|	public void addController(ActionListener _controller)
 	|	description: permette di aggiungere un controller come ActionListener alla view
 	\****************************************************************************************/
-	public void addController(ActionListener _controller)
+	public void addActionController(ActionListener _controller)
 	{
 		findB.addActionListener(_controller); 
 		disconnectB.addActionListener(_controller);
+	}
+	
+	/****************************************************************************************\
+	|	public void addWindowController(WindowListener _controller)
+	|	description: permette di aggiungere un controller come WindowListener alla view
+	\****************************************************************************************/
+	public void addWindowController(WindowListener _controller)
+	{
+		frame.addWindowListener(_controller);
 	}
 	
 	/****************************************************************************************\

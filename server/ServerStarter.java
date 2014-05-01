@@ -31,7 +31,8 @@ public class ServerStarter
 		sController.addView(sView);
 		
 		//connetto il controller ed il model alla view
-		sView.addController(sController);	
+		sView.addActionController(sController);		//controller input utente dai pulsanti
+		sView.addWindowController(sController);		//controller input utente dalla finestra
 		sView.addModel(sModel);
 		
 		//inizializzo il model con il nome del server ed i vari dati

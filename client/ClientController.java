@@ -14,11 +14,12 @@ package client;
 
 import java.rmi.*;
 import java.rmi.server.*;
+import java.awt.event.*;
 import java.util.Vector; 
 import java.awt.Color;
 import common.Resource;
 
-public class ClientController extends UnicastRemoteObject implements IClient, java.awt.event.ActionListener
+public class ClientController extends UnicastRemoteObject implements IClient, ActionListener, WindowListener
 {
 	private static final String HOST = "localhost:1099";					//host per la connessione RMI
 	private static final String RMITAG = "P3-P2P-JK"; 						//chiave identificativa per il registro RMI
@@ -38,6 +39,34 @@ public class ClientController extends UnicastRemoteObject implements IClient, ja
 	public ClientController() throws Exception 
 	{
 		
+	}
+	
+	/****************************************************************************************\
+	|	public void windowDeiconified(WindowEvent _e)
+	|	public void windowIconified(WindowEvent _e)
+	|	public void windowClosed(WindowEvent _e)
+	|	public void windowOpened(WindowEvent _e)
+	|	public void windowDeactivated(WindowEvent _e)
+	|	public void windowDeactivated(WindowEvent _e)
+	|	public void windowActivated(WindowEvent _e)
+	|	description: implementazione dell'interfaccia WindowListener
+	\****************************************************************************************/
+	public void windowDeiconified(WindowEvent _e){}
+	public void windowIconified(WindowEvent _e){}
+	public void windowClosed(WindowEvent _e){}
+	public void windowOpened(WindowEvent _e){}
+	public void windowDeactivated(WindowEvent _e){} //lost focus
+	public void windowActivated(WindowEvent _e){} //get focus
+	
+	/****************************************************************************************\
+	|	public void windowClosing(WindowEvent _e)
+	|	description: implementazione dell'interfaccia WindowListener in chiusura del server
+	\****************************************************************************************/
+	public void windowClosing(WindowEvent _e)
+	{
+		//eseguo la disconnessione dal server
+		
+		System.exit(0); 
 	}
 	
 	/****************************************************************************************\

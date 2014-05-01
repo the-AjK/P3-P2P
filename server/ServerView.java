@@ -75,21 +75,8 @@ public class ServerView implements java.util.Observer
 		frame.setSize(400, 400);
 		frame.setVisible(true);
 		frame.setResizable(false);
-		
 		frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-		/*frame.addWindowListener(new WindowAdapter()
-						 {
-							public void windowClosing(WindowEvent e)
-							{
-								//log.append("chiusura server in corso...\n");
-								JOptionPane.showMessageDialog(null, "Verranno notificati gli altri server. Attendere...", "Chiusura server", JOptionPane.ERROR_MESSAGE);
-								//log.append("Bye bye :)\n");
-								System.exit(-1);
-							}
-						});
-		*/
-		
-		
+	
 	} //ServerView()
 	
 	/****************************************************************************************\
@@ -113,9 +100,18 @@ public class ServerView implements java.util.Observer
 	|				 (attualmente non utilizzato visto che l'interfaccia server non presenta
 	|				 input utente di nessun tipo).
 	\****************************************************************************************/
-	public void addController(ActionListener _controller)
+	public void addActionController(ActionListener _controller)
 	{
-		//button.addActionListener(_controller);	
+		//button.addActionListener(_controller);
+	}
+	
+	/****************************************************************************************\
+	|	public void addWindowController(WindowListener _controller)
+	|	description: permette di aggiungere un controller come WindowListener alla view
+	\****************************************************************************************/
+	public void addWindowController(WindowListener _controller)
+	{
+		frame.addWindowListener(_controller);
 	}
 	
 	/****************************************************************************************\
@@ -123,18 +119,5 @@ public class ServerView implements java.util.Observer
 	|	description: setta il riferimento al model
 	\****************************************************************************************/
 	public void addModel(ServerModel _model){model = _model;}
-	
-	/****************************************************************************************\
-	|	public static class CloseListener
-	|	description: classe interna per gestire la chiusura della GUI
-	\****************************************************************************************/
-	public static class CloseListener extends WindowAdapter
-	{
-		public void windowClosing(WindowEvent e) {
-			e.getWindow().setVisible(false);
-			System.out.println ("ConJK:");
-			System.exit(0);
-		} 
-	} 	
 		
 }//end class ServerView()

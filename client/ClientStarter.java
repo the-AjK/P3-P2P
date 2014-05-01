@@ -35,7 +35,8 @@ public class ClientStarter
 		cController.addView(cView);
 		
 		//connetto il controller ed il model alla view
-		cView.addController(cController);	
+		cView.addActionController(cController);		//controller input utente dai pulsanti
+		cView.addWindowController(cController);		//controller input utente dalla finestra
 		cView.addModel(cModel);
 		
 		//inizializzo il model con il nome del server ed i vari dati
