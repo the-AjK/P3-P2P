@@ -34,6 +34,12 @@ public interface IServer extends Remote
 	|	description: utilizzato dai clients per richiedere la connessione al server
 	\****************************************************************************************/
 	public boolean connectMEClient(String _clientName, IClient _clientRef) throws RemoteException;
+	
+	/****************************************************************************************\
+	|	public boolean disconnectMEClient(String _clientName)
+	|	description: utilizzato dai clients per richiedere la disconnessione al server
+	\****************************************************************************************/
+	public boolean disconnectMEClient(String _clientName) throws RemoteException;
 
 	
 } //end interface IServer()

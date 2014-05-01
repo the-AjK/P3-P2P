@@ -20,14 +20,15 @@ import common.Resource;
 public class ClientModel extends java.util.Observable 
 {
 	//campi dati
-	private DeviceClient me;			//contiene nomeClient, riferimento e lista risorse
-	private String server2connect;		//nome del server a cui connettersi
-	private int downloadCapacity;		//capacità di download
-	private Vector<String> log;			//log di sistema
-	private Color coloreLog;			//colore testo della casella log
-	private boolean findBenabled;		//flag che indica se il pulsante di ricerca è abilitato oppure no
-	private boolean disconnectBenabled;	//flag che indica se il pulsante di disconnessione è abilitato oppure no
-	private String disconnectBtext;		//testo del pulsante di disconnessione
+	private DeviceClient me;				//contiene nomeClient, riferimento e lista risorse
+	private String server2connect;			//nome del server a cui connettersi
+	private int downloadCapacity;			//capacità di download
+	private Vector<String> log;				//log di sistema
+	private Color coloreLog;				//colore testo della casella log
+	private boolean findBenabled;			//flag che indica se il pulsante di ricerca è abilitato oppure no
+	private boolean disconnectBenabled;		//flag che indica se il pulsante di disconnessione è abilitato oppure no
+	private String disconnectBtext;			//testo del pulsante di disconnessione
+	private Vector<Resource> downloadQueue;	//lista di risorse in fase di download
 	
 	/****************************************************************************************\
 	|	public ClientModel() 
@@ -39,6 +40,7 @@ public class ClientModel extends java.util.Observable
 		me = new DeviceClient(); //creo me stesso
 		server2connect = "";
 		downloadCapacity = 0;
+		downloadQueue = new Vector<Resource>();
 		log = new Vector<String>();
 		log.add("P3-P2P Client (C) JK");
 	}
@@ -80,6 +82,37 @@ public class ClientModel extends java.util.Observable
 		me.setName(_nome);
 		viewRefresh();
 	}
+	
+	/****************************************************************************************\
+	|	public String getDownloadQueueText()
+	|	description: restituisce la lista di risorse in download in formato stringa per la GUI
+	\****************************************************************************************/
+	public String getDownloadQueueText()
+	{
+		String res = "";
+		for(int i=0; i<downloadQueue.size(); i++)
+		{
+			res = res + downloadQueue.get(i) + "\n";
+		}
+		return res;
+	}
+	
+	
+	/****************************************************************************************\
+	|	public String getResourceListText()
+	|	description: restituisce la lista di risorse del client in formato stringa per la GUI
+	\****************************************************************************************/
+	public String getResourceListText()
+	{	
+		String res = "";
+		Integer nparti;
+		for(int i=0; i<me.getNresource(); i++)
+		{
+			nparti = me.getResource(i).getNparts();
+			res = res + me.getResource(i).getName() + " " + nparti.toString() + "\n";
+		}
+		return res;
+	}	
 	
 	/****************************************************************************************\
 	|	public Vector<Resource> getResourceList()

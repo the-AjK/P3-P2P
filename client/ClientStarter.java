@@ -41,6 +41,9 @@ public class ClientStarter
 		
 		//inizializzo il model con il nome del server ed i vari dati
 		cController.initModel(_nomeClient,_server2connect,_D,_R);
+		
+		//inizializzo il client
+		cController.clientInit();
 	}
 	
 	/****************************************************************************************\

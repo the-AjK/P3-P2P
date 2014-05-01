@@ -122,6 +122,12 @@ public class ClientView implements java.util.Observer
 	public String getFindText(){return toFind.getText();}
 	
 	/****************************************************************************************\
+	|	public void setFindText(String _s)
+	|	description: restituisce il campo di ricerca al controller
+	\****************************************************************************************/
+	public void setFindText(String _s){toFind.setText(_s);}
+	
+	/****************************************************************************************\
 	|	public void update(Observable _obs, Object _obj)
 	|	description: implementazione dell'observer, metodo richiamato per eseguire il refresh
 	|				 della GUI in modalità "model-pull", la view usa il riferimento al model
@@ -133,6 +139,8 @@ public class ClientView implements java.util.Observer
 		disconnectB.setText(model.getDisconnectBtext());
 		disconnectB.setEnabled(model.getDisconnectBenabled());
 		findB.setEnabled(model.getFindBenabled());
+		files.setText(model.getResourceListText());
+		downloadQueue.setText(model.getDownloadQueueText());		
 		log.setText(model.getLogText());		
 	} 
 		

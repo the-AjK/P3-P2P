@@ -26,7 +26,10 @@ import java.awt.event.*;
 
 public class ServerController extends UnicastRemoteObject implements IServer, ActionListener, WindowListener
 {
+	//impostazioni modificabili
 	private static final String HOST = "localhost:1099";	//host per la connessione RMI
+	
+	//impostazioni NON modificabili
 	private static final String RMITAG = "P3-P2P-JK"; 		//chiave identificativa dei server per il registro RMI
 			
 	//riferimenti alle componenti View e Model
@@ -370,6 +373,20 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 			model.addLogText("[new client] connessione con il client " + _clientName + " fallita!");
 			return false;
 		}
+	}
+	
+	/****************************************************************************************\
+	|	public boolean disconnectMEClient(String _clientName) 
+	|	description: implementazione del metodo remoto dell'interfaccia IServer
+	\****************************************************************************************/
+	public boolean disconnectMEClient(String _clientName) throws RemoteException
+	{
+		synchronized(model)	//prendo il lock sui dati del model
+		{
+			model.removeClient(_clientName);			//rimuovo il client			
+			model.addLogText("il client " + _clientName + " si è disconnesso!");
+		} 	
+		return true;
 	}
 
 }//end class ServerController()
