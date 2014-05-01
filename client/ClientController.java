@@ -94,6 +94,10 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 		{
 			case FIND_BUTTON_TEXT:
 				System.out.println("cerca" + view.getFindText());
+				synchronized(model)
+				{
+					model.addResourceToDownloadQueue(new Resource("J",8));
+				}
 				break;
 				
 			case CONNECT_BUTTON_TEXT:
@@ -145,7 +149,6 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 					model.setLogColor(Color.BLUE);						//testo LOG in blu
 					model.addLogText("connessione al server " + model.getServer2Connect() + " completata!");
 					view.setFindText("");								//resetto la barra di ricerca
-					try{Thread.sleep(1000);}catch(Exception exc){}		//aspetto un secondo
 				}else{
 					model.setDisconnectBtext(CONNECT_BUTTON_TEXT);		//permetto la connessione
 					model.addLogText("il server " + model.getServer2Connect() + " NON ha accettato la richiesta di connessione.");
@@ -156,6 +159,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 		}else{
 			model.setDisconnectBtext(CONNECT_BUTTON_TEXT);				//permetto la connessione
 		}
+		try{Thread.sleep(100);}catch(Exception exc){}					//antibounce 100ms
 		model.setDisconnectBenabled(true);								//abilito il pulsante
 	}
 	
@@ -165,7 +169,8 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 	\****************************************************************************************/
 	private void disconnectFromServer()
 	{
-		model.setDisconnectBenabled(false);								//disabilito il pulsante
+		if(model.getDisconnectBtext().equals(CONNECT_BUTTON_TEXT))return;	//evito di disconnettermi se non sono connesso
+		model.setDisconnectBenabled(false);									//disabilito il pulsante
 		model.addLogText("disconnessione dal server " + model.getServer2Connect() + "...");
 		
 		IServer ref = serverLookup(model.getServer2Connect());			//recupero il riferimento del server
@@ -179,7 +184,6 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 					model.setFindBenabled(false);						//disabilito la ricerca
 					model.setLogColor(Color.RED);						//testo LOG in rosso
 					model.addLogText("disconnessione al server " + model.getServer2Connect() + " completata!");
-					try{Thread.sleep(1000);}catch(Exception exc){}		//aspetto un secondo
 				}else{
 					model.addLogText("il server " + model.getServer2Connect() + " NON ha accettato la richiesta di disconnessione.");
 				}
@@ -187,6 +191,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 				model.addLogText("connessione al server " + model.getServer2Connect() + " fallita!");
 			}
 		}
+		try{Thread.sleep(100);}catch(Exception exc){}					//antibounce 100ms
 		model.setDisconnectBenabled(true);								//abilito il pulsante
 
 	}

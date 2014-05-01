@@ -141,7 +141,8 @@ public class ClientView implements java.util.Observer
 		findB.setEnabled(model.getFindBenabled());
 		files.setText(model.getResourceListText());
 		downloadQueue.setText(model.getDownloadQueueText());		
-		log.setText(model.getLogText());		
+		log.setText(model.getLogText());	
+		log.setForeground(model.getLogColor());
 	} 
 		
 	/****************************************************************************************\

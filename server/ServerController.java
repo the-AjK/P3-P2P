@@ -357,6 +357,7 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 		try{
 			listaRisorse = _clientRef.getResourceList();
 		}catch(Exception e){
+			e.printStackTrace();
 			model.addLogText("[new client] impossibile recuperare la lista risorse!");
 			listaRisorse = null;
 		}

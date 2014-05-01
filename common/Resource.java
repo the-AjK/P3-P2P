@@ -12,37 +12,28 @@
 package common;
 
 import java.util.Vector;
+import java.io.Serializable;
+import java.io.*;
 
-public class Resource
+public class Resource implements Serializable
 {
-	/****************************************************************************************\
-	|	private class ResourcePart 
-	|	description: classe interna rappresentante una parte di risorsa
-	\****************************************************************************************/
-	private class ResourcePart 
-	{
-		public String part;
-		public ResourcePart(String _s)
-		{
-			part = _s;
-		}
-	}
-	
 	//campi dati
 	private String nomeRisorsa;						//nome della risorsa
-	private Vector<ResourcePart> partiRisorsa;		//parti della risorsa 
+	//private Vector<String> partiRisorsa;			//parti della risorsa 
+	
+	private static final long serialVersionUID = 7526472295622776147L;
 	
 	/****************************************************************************************\
 	|	public Resource(String _nomeRisorsa, int _nparti)
 	|	description: costruttore
 	\****************************************************************************************/
-	public Resource(String _nomeRisorsa, int _nparti)
+	public Resource(String _nomeRisorsa, Integer _nparti)
 	{
 		nomeRisorsa = _nomeRisorsa;
-		partiRisorsa = new Vector<ResourcePart>();
-		for(int i=0; i<_nparti; i++)
+		//partiRisorsa = new Vector<String>();
+		for(Integer i=0; i<_nparti; i++)
 		{
-			partiRisorsa.add(new ResourcePart("PART_CONTENT"));
+			//partiRisorsa.add(new String("PART_CONTENT"));
 		}
 	}
 	
@@ -56,32 +47,48 @@ public class Resource
 	|	public int getNparts()
 	|	description: restituisce il numero di parti che compongono la risorsa
 	\****************************************************************************************/
-	public int getNparts(){return partiRisorsa.size();}
+	//public Integer getNparts(){return partiRisorsa.size();}
 	
 	/****************************************************************************************\
 	|	public String getPart(int _n)
 	|	description: restituisce la parte della risorsa indicata
 	\****************************************************************************************/
-	public String getPart(int _n)
+	/*public String getPart(Integer _n)
 	{
 		if(_n < partiRisorsa.size())
 		{
-			return partiRisorsa.get(_n).part;
+			return partiRisorsa.get(_n);
 		}else{
 			return null;
 		}	
-	}
+	}*/
 	
 	/****************************************************************************************\
 	|	public void setPart(int _n, String _value)
 	|	description: setta la parte di risorsa indicata con un determinato valore (_value)
 	\****************************************************************************************/
-	public void setPart(int _n, String _value)
+	/*public void setPart(int _n, String _value)
 	{
 		if(_n < partiRisorsa.size())
 		{
-			partiRisorsa.get(_n).part = _value;
+			partiRisorsa.get(_n) = _value;
 		}
-	}	
+	}	*/
+
+	/*
+	private void writeObject(ObjectOutputStream out) throws IOException
+	{
+		out.defaultWriteObject();
+		//out.writeObject(nome);
+		//out.writeVector(componentiRisorsa);
+	}
+	
+	private void readObject(ObjectInputStream in) throws IOException,ClassNotFoundException
+	{
+		in.defaultReadObject();
+		//nome = (String) in.readObject();
+		//componentiRisorsa = (Vector<Integer>) in.readVector();
+	
+	}*/
 
 } //end class Resource

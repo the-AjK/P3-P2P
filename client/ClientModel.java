@@ -84,15 +84,37 @@ public class ClientModel extends java.util.Observable
 	}
 	
 	/****************************************************************************************\
+	|	public void addResourceToDownloadQueue()
+	|	description: aggiunge una risorsa in coda download
+	\****************************************************************************************/
+	public void addResourceToDownloadQueue(Resource _res)
+	{
+		downloadQueue.add(_res);
+		viewRefresh();
+	}
+	
+	/****************************************************************************************\
 	|	public String getDownloadQueueText()
 	|	description: restituisce la lista di risorse in download in formato stringa per la GUI
 	\****************************************************************************************/
 	public String getDownloadQueueText()
 	{
 		String res = "";
+		Integer nparti=0;
 		for(int i=0; i<downloadQueue.size(); i++)
 		{
-			res = res + downloadQueue.get(i) + "\n";
+			//nparti = downloadQueue.get(i).getNparts();
+			res = res + downloadQueue.get(i).getName() + " [ ";
+			for(int j=0; j<nparti; j++)
+			{
+				switch(0)//downloadQueue.get(i).getPart(j))
+				{
+					default:
+						res = res + "_ ";
+						break;
+				}
+			}
+			res = res + "]\n";
 		}
 		return res;
 	}
@@ -105,10 +127,10 @@ public class ClientModel extends java.util.Observable
 	public String getResourceListText()
 	{	
 		String res = "";
-		Integer nparti;
+		Integer nparti=0;
 		for(int i=0; i<me.getNresource(); i++)
 		{
-			nparti = me.getResource(i).getNparts();
+			//nparti = me.getResource(i).getNparts();
 			res = res + me.getResource(i).getName() + " " + nparti.toString() + "\n";
 		}
 		return res;
