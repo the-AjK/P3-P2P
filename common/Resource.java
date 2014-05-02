@@ -21,7 +21,7 @@ public class Resource implements Serializable
 	private String nomeRisorsa;						//nome della risorsa
 	//private Vector<String> partiRisorsa;			//parti della risorsa 
 	
-	private static final long serialVersionUID = 7526472295622776147L;
+	//private static final long serialVersionUID = 7526472295622776147L;
 	
 	/****************************************************************************************\
 	|	public Resource(String _nomeRisorsa, int _nparti)

@@ -29,6 +29,7 @@ public class ClientModel extends java.util.Observable
 	private boolean disconnectBenabled;		//flag che indica se il pulsante di disconnessione è abilitato oppure no
 	private String disconnectBtext;			//testo del pulsante di disconnessione
 	private Vector<Resource> downloadQueue;	//lista di risorse in fase di download
+	private String animationIcon;			//piccola icona di animazione per visualizzare lo stato del client
 	
 	/****************************************************************************************\
 	|	public ClientModel() 
@@ -42,7 +43,13 @@ public class ClientModel extends java.util.Observable
 		downloadCapacity = 0;
 		downloadQueue = new Vector<Resource>();
 		log = new Vector<String>();
-		log.add("P3-P2P Client (C) JK");
+		log.add("  ______  ______          ______  ______  ______ ");  
+		log.add(" |   __ \\|__    | ______ |   __ \\|__    ||   __ \\"); 
+		log.add(" |    __/|__    ||______||    __/|    __||    __/"); 
+		log.add(" |___|   |______|        |___|   |______||___|	  "); 
+		log.add("                          P3-P2P Client (C) JK   ");   
+		log.add("--------------------------------------------------");
+		animationIcon = "[-]";
 	}
 	
 	/****************************************************************************************\
@@ -54,6 +61,22 @@ public class ClientModel extends java.util.Observable
 		setChanged();
 		notifyObservers();	//model pull
 	}
+	
+	/****************************************************************************************\
+	|	public String getAnimIcon()
+	|	description: restituisce l'icona
+	\****************************************************************************************/
+	public String getAnimIcon(){return animationIcon;}
+	
+	/****************************************************************************************\
+	|	public void setAnimIcon(String _s)
+	|	description: setta l'icona
+	\****************************************************************************************/
+	public void setAnimIcon(String _s)
+	{
+		animationIcon = _s;
+		viewRefresh();
+	}	
 
 	/****************************************************************************************\
 	|	public IClient getClientRef()
@@ -199,13 +222,40 @@ public class ClientModel extends java.util.Observable
 	}
 	
 	/****************************************************************************************\
-	|	public void addLogText(String _logLine)
-	|	description: aggiunge una riga di testo ai log
+	|	public int addLogText(String _logLine)
+	|	description: aggiunge una riga di testo ai log e ritorna la posizione
 	\****************************************************************************************/
-	public void addLogText(String _logLine)
+	public int addLogText(String _logLine)
 	{
 		log.add(_logLine);
 		viewRefresh();
+		return log.size() - 1;
+	}
+	
+	/****************************************************************************************\
+	|	public void addLogTextToLine(int pos, String _logText)
+	|	description: aggiunge del testo nella riga dei log indicata
+	\****************************************************************************************/
+	public void addLogTextToLine(int pos, String _logText)
+	{
+		if(pos < log.size())
+		{
+			log.setElementAt(log.get(pos) + _logText, pos);
+			viewRefresh();
+		}
+	}
+	
+	/****************************************************************************************\
+	|	public void setLogText(int pos, String _logLine)
+	|	description: sovrascrive un log precedente nella posizione indicata
+	\****************************************************************************************/
+	public void setLogText(int pos, String _logLine)
+	{
+		if(pos < log.size())
+		{
+			log.setElementAt(_logLine, pos);
+			viewRefresh();
+		}
 	}
 	
 	/****************************************************************************************\

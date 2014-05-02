@@ -235,13 +235,27 @@ public class ServerModel extends java.util.Observable
 	}
 	
 	/****************************************************************************************\
-	|	public void addLogText(String _logLine)
-	|	description: aggiunge una riga ai log
+	|	public int addLogText(String _logLine)
+	|	description: aggiunge una riga di testo ai log e ritorna la posizione
 	\****************************************************************************************/
-	public void addLogText(String _logLine)
+	public int addLogText(String _logLine)
 	{
 		log.add(_logLine);
 		viewRefresh();
+		return log.size() - 1;
+	}
+	
+	/****************************************************************************************\
+	|	public void addLogTextToLine(int pos, String _logText)
+	|	description: aggiunge del testo nella riga dei log indicata
+	\****************************************************************************************/
+	public void addLogTextToLine(int pos, String _logText)
+	{
+		if(pos < log.size())
+		{
+			log.setElementAt(log.get(pos) + _logText, pos);
+			viewRefresh();
+		}
 	}
 	
 	/****************************************************************************************\

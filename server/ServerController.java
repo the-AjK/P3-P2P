@@ -30,7 +30,8 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 	private static final String HOST = "localhost:1099";	//host per la connessione RMI
 	
 	//impostazioni NON modificabili
-	private static final String RMITAG = "P3-P2P-JK"; 		//chiave identificativa dei server per il registro RMI
+	private static final int CHECKCONNECTIONS_TIMEOUT = 3000;	//controllo connessione in background ogni 3secondi
+	private static final String RMITAG = "P3-P2P-JK"; 			//chiave identificativa dei server per il registro RMI
 			
 	//riferimenti alle componenti View e Model
 	private ServerView view;
@@ -55,8 +56,9 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 	public void serverInit()
 	{
 		//inizio le operazioni di avvio del server...
+		int logPos = model.addLogText("inizializzazione server " + model.getServerName() + "...");		
 		serverRebind(model.getServerName(),this);		//pubblico il mio nome così i clients possono collegarsi
-		model.addLogText("server " + model.getServerName() + " inizializzato!");
+		model.addLogTextToLine(logPos," OK!");
 		model.setLogColor(Color.BLUE);
 		connect2server();								//controllo i server online e mi connetto ad essi
 		threadInit();									//inizializzo i thread che girano in background
@@ -75,7 +77,7 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 				while(true)
 				{
 					//aspetto tre secondi prima di controllare
-					try{sleep(3000);}catch(InterruptedException ie){}
+					try{sleep(CHECKCONNECTIONS_TIMEOUT);}catch(InterruptedException ie){}
 					
 					//Controllo la presenza dell'RMI registry
 					try{
@@ -84,8 +86,8 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 					catch(Exception e)
 					{
 						model.setLogColor(Color.RED);
-						model.addLogText("[checkConnections_thread] FATAL ERROR! connessione RMI non riuscita.");
-						model.addLogText("[checkConnections_thread] server auto-shutdown tra 30sec...");	
+						model.addLogText("[check_thread] FATAL ERROR! connessione RMI non riuscita.");
+						model.addLogText("[check_thread] server auto-shutdown tra 30sec...");	
 						try{sleep(30000);}catch(InterruptedException ie){}
 						System.exit(-1);
 					}
@@ -100,7 +102,7 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 							try{
 								model.getServer(i).getRef().heartbeat();		//controllo se il server è vivo
 							}catch(Exception e){
-								model.addLogText("[checkConnections_thread] il server " + model.getServer(i).getName() + " è offline.");
+								model.addLogText("[check_thread] il server " + model.getServer(i).getName() + " è offline.");
 								model.removeServer(model.getServer(i).getName());
 							}		
 						}					
@@ -114,7 +116,7 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 							try{
 								model.getClient(i).getRef().heartbeat();		//controllo se il client è vivo
 							}catch(Exception e){
-								model.addLogText("[checkConnections_thread] il client " + model.getClient(i).getName() + " è offline.");
+								model.addLogText("[check_thread] il client " + model.getClient(i).getName() + " è offline.");
 								model.removeClient(model.getClient(i).getName());
 							}		
 						}					
@@ -124,7 +126,8 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 			}// end run()
 		};
 		checkConnections.start();	//avvio il thread
-	}
+		
+	} //end threadInit()
 	
 	/****************************************************************************************\
 	|	private void serverRebind(String, ServerController)
@@ -198,7 +201,7 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 	{
 		String[] serverNamesList = {};	
 			
-		model.addLogText("ricerca server online...");
+		int logPos = model.addLogText("ricerca server online...");
 		
 		//recupero la lista dei server iscritti al registro RMI
 		try{
@@ -241,7 +244,12 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 		}
 		int serverTrovati = serverNamesList.length;
 		if(serverTrovati > 0) serverTrovati--;				//rimuovo me stesso
-		model.addLogText("ricerca server online completata! trovati " + serverTrovati + " server di cui " + serverConnessi + " online.");
+		if(serverTrovati == 0)
+		{
+			model.addLogTextToLine(logPos," completata! Nessun server online.");
+		}else{
+			model.addLogText("ricerca server online completata! trovati " + serverTrovati + " server di cui " + serverConnessi + " online.");
+		}
 		
 	} //connect2server()
 	
@@ -305,7 +313,6 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 		model.setServerName(_nome);
 		model.setServerRef(this);
 		model.setLogColor(Color.RED);
-		model.addLogText("inizializzazione server...");		
 	}
 	
 	/****************************************************************************************\

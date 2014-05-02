@@ -90,9 +90,10 @@ public class ClientView implements java.util.Observer
 		
 		//preparo il log sottostante
 		log = new JTextArea();
+		log.setFont(new Font("Monospaced", Font.PLAIN, 11));
 		JScrollPane logList = new JScrollPane(log);
 		DefaultCaret caret = (DefaultCaret) log.getCaret(); //scrolling continuo verso il basso
-		caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+		caret.setUpdatePolicy(DefaultCaret.UPDATE_WHEN_ON_EDT);
 		logList.setBorder(BorderFactory.createTitledBorder("Log"));
 		log.setForeground(Color.RED);
 				
@@ -135,13 +136,13 @@ public class ClientView implements java.util.Observer
 	\****************************************************************************************/
 	public void update(Observable _obs, Object _obj)
 	{
-		frame.setTitle("Client " + model.getClientName() + " per " + model.getServer2Connect());
+		frame.setTitle(model.getAnimIcon() + " Client " + model.getClientName() + " per " + model.getServer2Connect());
 		disconnectB.setText(model.getDisconnectBtext());
 		disconnectB.setEnabled(model.getDisconnectBenabled());
 		findB.setEnabled(model.getFindBenabled());
 		files.setText(model.getResourceListText());
-		downloadQueue.setText(model.getDownloadQueueText());		
-		log.setText(model.getLogText());	
+		downloadQueue.setText(model.getDownloadQueueText());
+		log.setText(model.getLogText());
 		log.setForeground(model.getLogColor());
 	} 
 		
