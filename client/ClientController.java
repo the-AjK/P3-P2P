@@ -25,6 +25,8 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 	//impostazioni modificabili
 	private static final String HOST = "localhost:1099";					//host per la connessione RMI
 	private static final int DOWNLOAD_TIMEOUT = 3000;						//tempo per simulare il download di una parte di risorsa
+	private static final boolean VERBOSE_LOG = true;						//se true visualizza più messaggi di log
+	
 	
 	//impostazioni NON modificabili
 	private static final int CHECKCONNECTIONS_TIMEOUT = 3000;				//timeout per controllo connessione in background
@@ -71,12 +73,23 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 		checkConnections = new Thread(){ 
 			public void run()
 			{
-				boolean RMI_OK = false;		//FLAG che indica lo stato della connessione al registro RMI
-				boolean SERVER_OK = false;	//FLAG status del mio server
+				boolean RMI_OK = true;		//FLAG che indica lo stato della connessione al registro RMI
+				boolean SERVER_OK = true;	//FLAG status del mio server
 				IServer ref;				//riferimento remoto del mio server
 				String[] animIcon = {"PSP","P2P"};
 				model.addLogText("[check_thread] connessione automatica avviata...");
 				model.setDisconnectBtext(CONNECTION_BUTTON_TEXT);
+				
+				//controllo lo stato del server
+				try{
+					ref = (IServer) Naming.lookup("rmi://" + HOST + "/" + RMITAG + "/" + model.getServer2Connect());
+				}catch(NotBoundException e){
+					SERVER_OK = false; //non ho trovato il server nel registro RMI
+					RMI_OK = true;
+				}catch(Exception e){
+					SERVER_OK = false; //non ho trovato il server nel registro RMI
+					RMI_OK = false;
+				}
 				
 				while(true)
 				{
@@ -88,52 +101,52 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 					}
 					try{sleep(CHECKCONNECTIONS_TIMEOUT);}catch(InterruptedException ie){}	
 					
-						String[] serverNamesList = {};
-						try{
-							serverNamesList = Naming.list("//" + HOST );
-							if(!RMI_OK)
-							{
-								model.setLogColor(Color.BLUE);
-								model.addLogText("[check_thread] connessione RMI OK.");
-								connectToServer();			//mi connetto al server
-								RMI_OK = true;
-							}
-						}
-						catch(Exception e)
+					String[] serverNamesList = {};
+					try{
+						serverNamesList = Naming.list("//" + HOST );
+						if(!RMI_OK)
 						{
-							if(RMI_OK)
-							{
-								if(model.getDisconnectBtext().equals(DISCONNECT_BUTTON_TEXT))//se ero connesso
-								{
-									model.setLogColor(Color.RED);
-									model.addLogText("[check_thread] connessione RMI non riuscita.");
-									int logPos = model.addLogText("disconnessione dal server " + model.getServer2Connect() + "...");
-									model.setDisconnectBtext(CONNECT_BUTTON_TEXT);		//permetto la connessione
-									model.setDisconnectBenabled(true);	
-									model.setFindBenabled(false);						//disabilito la ricerca
-									model.addLogTextToLine(logPos," completata!");
-									RMI_OK = false;
-								}else{
-									model.setLogColor(Color.RED);
-									model.addLogText("[check_thread] connessione RMI non riuscita.");
-									model.setDisconnectBtext(CONNECT_BUTTON_TEXT);		//permetto la connessione
-									model.setDisconnectBenabled(true);	
-									model.setFindBenabled(false);						//disabilito la ricerca
-									RMI_OK = false;
-								}
-							}else{
-								if(model.getDisconnectBtext().equals(CONNECTION_BUTTON_TEXT))//se ero in connessione all'avvio del server
-								{
-									model.setLogColor(Color.RED);
-									model.addLogText("[check_thread] connessione RMI non riuscita.");
-									model.setDisconnectBtext(CONNECT_BUTTON_TEXT);		//permetto la connessione
-									model.setDisconnectBenabled(true);	
-									model.setFindBenabled(false);						//disabilito la ricerca
-									RMI_OK = false;
-								}
-							}
-							
+							model.setLogColor(Color.BLUE);
+							model.addLogText("[check_thread] connessione RMI OK.");
+							connectToServer();			//mi connetto al server
+							RMI_OK = true;
 						}
+					}
+					catch(Exception e)
+					{
+						if(RMI_OK)
+						{
+							if(model.getDisconnectBtext().equals(DISCONNECT_BUTTON_TEXT))//se ero connesso
+							{
+								model.setLogColor(Color.RED);
+								model.addLogText("[check_thread] connessione RMI non riuscita.");
+								int logPos = model.addLogText("disconnessione dal server " + model.getServer2Connect() + "...");
+								model.setDisconnectBtext(CONNECT_BUTTON_TEXT);		//permetto la connessione
+								model.setDisconnectBenabled(true);	
+								model.setFindBenabled(false);						//disabilito la ricerca
+								model.addLogTextToLine(logPos," completata!");
+								RMI_OK = false;
+							}else{
+								model.setLogColor(Color.RED);
+								model.addLogText("[check_thread] connessione RMI non riuscita.");
+								model.setDisconnectBtext(CONNECT_BUTTON_TEXT);		//permetto la connessione
+								model.setDisconnectBenabled(true);	
+								model.setFindBenabled(false);						//disabilito la ricerca
+								RMI_OK = false;
+							}
+						}else{
+							if(model.getDisconnectBtext().equals(CONNECTION_BUTTON_TEXT))//se ero in connessione all'avvio del server
+							{
+								model.setLogColor(Color.RED);
+								model.addLogText("[check_thread] connessione RMI non riuscita.");
+								model.setDisconnectBtext(CONNECT_BUTTON_TEXT);		//permetto la connessione
+								model.setDisconnectBenabled(true);	
+								model.setFindBenabled(false);						//disabilito la ricerca
+								RMI_OK = false;
+							}
+						}
+						
+					}
 							
 					//controllo se il mio server è online (solo se RMI è OK)
 					if(RMI_OK)
@@ -141,7 +154,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 						try{
 							ref = (IServer) Naming.lookup("rmi://" + HOST + "/" + RMITAG + "/" + model.getServer2Connect());
 							ref.heartbeat();											//controllo se il server è vivo
-							if(!SERVER_OK)
+							if(!SERVER_OK && ref != null)
 							{
 								model.setLogColor(Color.BLUE);
 								model.addLogText("[check_thread] il server " + model.getServer2Connect() + " è online!");
@@ -266,7 +279,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 						view.setFindText("");								//resetto la barra di ricerca
 					}else{
 						model.setDisconnectBtext(CONNECT_BUTTON_TEXT);		//permetto la connessione
-						model.addLogText("il server " + model.getServer2Connect() + " NON ha accettato la richiesta di connessione.");
+						model.addLogText(model.getServer2Connect() + " NON ha accettato la richiesta di connessione.");
 					}
 				}catch(Exception e){
 					model.addLogTextToLine(logPos," fallita!");
@@ -306,7 +319,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 						model.setLogColor(Color.RED);						//testo LOG in rosso
 						model.addLogTextToLine(logPos," completata!");
 					}else{
-						model.addLogText("il server " + model.getServer2Connect() + " NON ha accettato la richiesta di disconnessione.");
+						model.addLogText(model.getServer2Connect() + " NON ha accettato la richiesta di disconnessione.");
 					}
 				}catch(Exception e){
 					model.addLogTextToLine(logPos," fallita!");

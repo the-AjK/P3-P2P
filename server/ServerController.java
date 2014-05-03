@@ -28,6 +28,7 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 {
 	//impostazioni modificabili
 	private static final String HOST = "localhost:1099";		//host per la connessione RMI
+	private static final boolean VERBOSE_LOG = true;			//se true visualizza più messaggi di log
 	
 	//impostazioni NON modificabili
 	private static final int CHECKCONNECTIONS_TIMEOUT = 3000;	//controllo connessione in background ogni 3secondi
@@ -337,11 +338,23 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 	\****************************************************************************************/
 	public boolean connectMEServer(String _serverName) throws RemoteException
 	{
+		if(VERBOSE_LOG)
+			model.addLogText("[new server] il server " + _serverName + " richiede connessione!");
+			
+		//controllo che non sia già connesso
+		if(model.serverIsHere(_serverName))
+		{
+			if(VERBOSE_LOG)
+				model.addLogText("[new server] il server " + _serverName + " è già connesso!");
+			return false;
+		}
+		
 		IServer ref;
 		try{
 			ref = serverLookup(_serverName);
 		}catch(Exception e){
-			model.addLogText("[new server] impossibile contattare il server " + _serverName + "!");
+			if(VERBOSE_LOG)
+				model.addLogText("[new server] impossibile contattare il server " + _serverName + "!");
 			ref = null;
 		}
 		
@@ -364,15 +377,25 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 	\****************************************************************************************/
 	public boolean connectMEClient(String _clientName, IClient _clientRef) throws RemoteException
 	{
-		model.addLogText("[new client] il client " + _clientName + " richiede connessione!");
-			
-		model.addLogText("[new client] recupero lista risorse del client " + _clientName + "...");
+		if(VERBOSE_LOG)
+			model.addLogText("[new client] il client " + _clientName + " richiede connessione!");
+		
+		//controllo che non sia già connesso
+		if(model.clientIsHere(_clientName))
+		{
+			if(VERBOSE_LOG)
+				model.addLogText("[new client] il client " + _clientName + " è già connesso!");
+			return false;
+		}
+		
+		if(VERBOSE_LOG)
+			model.addLogText("[new client] recupero lista risorse del client " + _clientName + "...");
 		Vector<Resource> listaRisorse;
 		try{
 			listaRisorse = _clientRef.getResourceList();
 		}catch(Exception e){
-			e.printStackTrace();
-			model.addLogText("[new client] impossibile recuperare la lista risorse!");
+			if(VERBOSE_LOG)
+				model.addLogText("[new client] impossibile recuperare la lista risorse!");
 			listaRisorse = null;
 		}
 		
@@ -396,6 +419,9 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 	\****************************************************************************************/
 	public boolean disconnectMEClient(String _clientName) throws RemoteException
 	{
+		//se il client non è connesso, non faccio nulla
+		if(!model.clientIsHere(_clientName))return false;
+		
 		synchronized(model)	//prendo il lock sui dati del model
 		{
 			model.removeClient(_clientName);			//rimuovo il client			

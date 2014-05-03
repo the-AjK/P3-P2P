@@ -167,6 +167,19 @@ public class ServerModel extends java.util.Observable
 	}
 	
 	/****************************************************************************************\
+	|	public boolean serverIsHere(String _serverName)
+	|	description: restituisce true se il server specificato è nella lista servers
+	\****************************************************************************************/
+	public boolean serverIsHere(String _serverName)
+	{
+		for(int i=0; i<servers.size(); i++)
+		{
+			if(servers.get(i).getName().equals(_serverName))return true;
+		}
+		return false;
+	}
+	
+	/****************************************************************************************\
 	|	public DeviceClient getClient(int _n)
 	|	description: restituisce il DeviceClient specificato 
 	\****************************************************************************************/
@@ -179,6 +192,19 @@ public class ServerModel extends java.util.Observable
 			return null;
 		}	
 	}	
+	
+	/****************************************************************************************\
+	|	public boolean clientIsHere(String _clientName)
+	|	description: restituisce true se il client specificato è nella lista clients
+	\****************************************************************************************/
+	public boolean clientIsHere(String _clientName)
+	{
+		for(int i=0; i<clients.size(); i++)
+		{
+			if(clients.get(i).getName().equals(_clientName))return true;
+		}
+		return false;
+	}
 	
 	/****************************************************************************************\
 	|	public void setServerName(String _nome)
