@@ -285,6 +285,29 @@ public class ServerModel extends java.util.Observable
 	}
 	
 	/****************************************************************************************\
+	|	public void addClientResourceList(String _nomeClient, Vector<Resource> _listaRisorse)
+	|	description: aggiorna la lista risorse di un client
+	\****************************************************************************************/
+	public void addClientResourceList(String _nomeClient, Vector<Resource> _listaRisorse)
+	{
+		boolean trovato = false;
+		int i;
+		for(i=0; i<clients.size(); i++)
+		{
+			if(clients.get(i).getName().equals(_nomeClient))
+			{
+				trovato = true;
+				break;
+			}
+		}
+		if(trovato)
+		{
+			clients.get(i).setResourceList(_listaRisorse);
+			viewRefresh();
+		}
+	}
+	
+	/****************************************************************************************\
 	|	public int addLogText(String _logLine)
 	|	description: aggiunge una riga di testo ai log e ritorna la posizione
 	\****************************************************************************************/
@@ -304,6 +327,19 @@ public class ServerModel extends java.util.Observable
 		if(pos < log.size())
 		{
 			log.setElementAt(log.get(pos) + _logText, pos);
+			viewRefresh();
+		}
+	}
+	
+	/****************************************************************************************\
+	|	public void setLogText(int pos, String _logLine)
+	|	description: sovrascrive un log precedente nella posizione indicata
+	\****************************************************************************************/
+	public void setLogText(int pos, String _logLine)
+	{
+		if(pos < log.size())
+		{
+			log.setElementAt(_logLine, pos);
 			viewRefresh();
 		}
 	}

@@ -96,6 +96,12 @@ public class DeviceClient
 	public Vector<Resource> getResourceList(){return risorse;}
 	
 	/****************************************************************************************\
+	|	public void setResourceList()
+	|	description: restituisce la lista di risorse
+	\****************************************************************************************/
+	public void setResourceList(Vector<Resource> _r){risorse = _r;}
+	
+	/****************************************************************************************\
 	|	public void addResource(Resource _r)
 	|	description: aggiunge una risorsa alla lista di risorse
 	\****************************************************************************************/

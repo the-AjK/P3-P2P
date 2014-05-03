@@ -17,6 +17,9 @@ import client.IClient;
 
 public interface IServer extends Remote
 {
+	//campi dati
+	public static final String HEARTBEAT_ANSWER = "JK-SERVER-OK";
+	
 	/****************************************************************************************\
 	|	public String heartbeat()
 	|	description: heartbeat di controllo
@@ -31,7 +34,8 @@ public interface IServer extends Remote
 	
 	/****************************************************************************************\
 	|	public boolean connectMEClient(String _clientName, IClient _clientRef)
-	|	description: utilizzato dai clients per richiedere la connessione al server
+	|	description: utilizzato dai clients per richiedere la connessione al server e/o per 
+	|				 notificare la lista di risorse
 	\****************************************************************************************/
 	public boolean connectMEClient(String _clientName, IClient _clientRef) throws RemoteException;
 	

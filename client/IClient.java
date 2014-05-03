@@ -17,6 +17,9 @@ import common.Resource;
 
 public interface IClient extends Remote
 { 
+	//campi dati
+	public static final String HEARTBEAT_ANSWER = "JK-CLIENT-OK";
+	
 	/****************************************************************************************\
 	|	public String heartbeat()
 	|	description: heartbeat di controllo
