@@ -123,19 +123,19 @@ public class ClientModel extends java.util.Observable
 	\****************************************************************************************/
 	public String getDownloadQueueText()
 	{
-		String res = "";
+		String res = "[ limite parti in download = " + downloadCapacity + " ]\n";
 		Integer nparti=0;
 		for(int i=0; i<downloadQueue.size(); i++)
 		{
-			//nparti = downloadQueue.get(i).getNparts();
+			nparti = downloadQueue.get(i).getNparts();
 			res = res + downloadQueue.get(i).getName() + " [ ";
 			for(int j=0; j<nparti; j++)
 			{
-				switch(0)//downloadQueue.get(i).getPart(j))
+				if(downloadQueue.get(i).isPartEmpty(j))
 				{
-					default:
-						res = res + "_ ";
-						break;
+					res = res + "_ ";
+				}else{
+					res = res + "[] ";
 				}
 			}
 			res = res + "]\n";
@@ -151,11 +151,11 @@ public class ClientModel extends java.util.Observable
 	public String getResourceListText()
 	{	
 		String res = "";
-		Integer nparti=0;
+		int nparti=0;
 		for(int i=0; i<me.getNresource(); i++)
 		{
-			//nparti = me.getResource(i).getNparts();
-			res = res + me.getResource(i).getName() + " " + nparti.toString() + "\n";
+			nparti = me.getResource(i).getNparts();
+			res = res + me.getResource(i).getName() + " " + nparti + "\n";
 		}
 		return res;
 	}	

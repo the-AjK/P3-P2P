@@ -237,9 +237,16 @@ public class ServerModel extends java.util.Observable
 	public String getClientsText()
 	{
 		String res = "";
+		
 		for(int i=0; i<clients.size(); i++)
 		{
-			res = res + clients.get(i).getName() + "\n";
+			res = res + clients.get(i).getName() + " - [ R: {";
+			for(int j=0; j<clients.get(i).getNresource(); j++)
+			{
+				if(j!=0)res = res + ",";
+				res = res + clients.get(i).getResource(j).getName() + clients.get(i).getResource(j).getNparts();
+			}
+			res = res + "} ]\n";
 		}
 		return res;
 	}	

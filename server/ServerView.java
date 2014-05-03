@@ -46,7 +46,7 @@ public class ServerView implements java.util.Observer
 		//ora le varie aree di testo
 		clients = new JTextArea();
 		JScrollPane clientsList = new JScrollPane(clients);
-		clientsList.setBorder(BorderFactory.createTitledBorder("Client connessi"));
+		clientsList.setBorder(BorderFactory.createTitledBorder("Client connessi - risorse"));
 		connectionsP.add(clientsList);		
 		
 		servers = new JTextArea();
@@ -59,7 +59,7 @@ public class ServerView implements java.util.Observer
 		log.setFont(new Font("Monospaced", Font.PLAIN, 11));
 		JScrollPane logList = new JScrollPane(log);
 		DefaultCaret caret = (DefaultCaret) log.getCaret(); //scrolling continuo verso il basso
-		caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+		caret.setUpdatePolicy(DefaultCaret.UPDATE_WHEN_ON_EDT);
 		logList.setBorder(BorderFactory.createTitledBorder("Log"));
 		log.setForeground(Color.RED);
 		

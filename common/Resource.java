@@ -17,23 +17,28 @@ import java.io.*;
 
 public class Resource implements Serializable
 {
+	private class ResourcePart implements Serializable
+	{
+		public boolean part;
+		public ResourcePart(boolean _part){part = _part;}
+	}
+	
 	//campi dati
 	private String nomeRisorsa;						//nome della risorsa
-	//private Vector<String> partiRisorsa;			//parti della risorsa 
-	
-	//private static final long serialVersionUID = 7526472295622776147L;
+	private Vector<ResourcePart> partiRisorsa;		//parti della risorsa 
+		
 	
 	/****************************************************************************************\
-	|	public Resource(String _nomeRisorsa, int _nparti)
+	|	public Resource(String _nomeRisorsa, int _nparti, boolean _initValue)
 	|	description: costruttore
 	\****************************************************************************************/
-	public Resource(String _nomeRisorsa, Integer _nparti)
+	public Resource(String _nomeRisorsa, int _nparti, boolean _initValue)
 	{
 		nomeRisorsa = _nomeRisorsa;
-		//partiRisorsa = new Vector<String>();
-		for(Integer i=0; i<_nparti; i++)
+		partiRisorsa = new Vector<ResourcePart>();
+		for(int i=0; i<_nparti; i++)
 		{
-			//partiRisorsa.add(new String("PART_CONTENT"));
+			partiRisorsa.add(new ResourcePart(_initValue));
 		}
 	}
 	
@@ -47,48 +52,84 @@ public class Resource implements Serializable
 	|	public int getNparts()
 	|	description: restituisce il numero di parti che compongono la risorsa
 	\****************************************************************************************/
-	//public Integer getNparts(){return partiRisorsa.size();}
+	public int getNparts(){return partiRisorsa.size();}
 	
 	/****************************************************************************************\
-	|	public String getPart(int _n)
-	|	description: restituisce la parte della risorsa indicata
+	|	public boolean isFull()
+	|	description: restituisce true se la risorsa è completa in tutte le sue parti
 	\****************************************************************************************/
-	/*public String getPart(Integer _n)
+	public boolean isFull()
 	{
-		if(_n < partiRisorsa.size())
-		{
-			return partiRisorsa.get(_n);
-		}else{
-			return null;
-		}	
-	}*/
+		int trueCounter = 0;
+		for(int i=0; i<partiRisorsa.size(); i++)
+			if(partiRisorsa.get(i).part)trueCounter++;
+	
+		return trueCounter == partiRisorsa.size();
+	}	
 	
 	/****************************************************************************************\
-	|	public void setPart(int _n, String _value)
-	|	description: setta la parte di risorsa indicata con un determinato valore (_value)
+	|	public boolean isEmpty()
+	|	description: restituisce true se la risorsa ha tutte le sue parti incomplete
 	\****************************************************************************************/
-	/*public void setPart(int _n, String _value)
+	public boolean isEmpty()
 	{
-		if(_n < partiRisorsa.size())
-		{
-			partiRisorsa.get(_n) = _value;
-		}
-	}	*/
-
-	/*
-	private void writeObject(ObjectOutputStream out) throws IOException
-	{
-		out.defaultWriteObject();
-		//out.writeObject(nome);
-		//out.writeVector(componentiRisorsa);
+		int falseCounter = 0;
+		for(int i=0; i<partiRisorsa.size(); i++)
+			if(partiRisorsa.get(i).part == false)falseCounter++;
+	
+		return falseCounter == partiRisorsa.size();
 	}
 	
-	private void readObject(ObjectInputStream in) throws IOException,ClassNotFoundException
+	/****************************************************************************************\
+	|	public boolean isPartEmpty(int _part)
+	|	description: restituisce true se la parte di risorsa indicata è incompleta
+	\****************************************************************************************/
+	public boolean isPartEmpty(int _part)
 	{
-		in.defaultReadObject();
-		//nome = (String) in.readObject();
-		//componentiRisorsa = (Vector<Integer>) in.readVector();
+		if(_part < partiRisorsa.size())
+		{
+			return partiRisorsa.get(_part).part == false;
+		}
+		return false;
+	}
 	
-	}*/
+	/****************************************************************************************\
+	|	public boolean isPartFull(int _part)
+	|	description: restituisce true se la parte di risorsa indicata è completa
+	\****************************************************************************************/
+	public boolean isPartFull(int _part)
+	{
+		if(_part < partiRisorsa.size())
+		{
+			return partiRisorsa.get(_part).part == true;
+		}
+		return false;
+	}
+	
+	/****************************************************************************************\
+	|	public boolean getPart(int _n)
+	|	description: restituisce la parte della risorsa indicata
+	\****************************************************************************************/
+	public boolean getPart(int _n)
+	{
+		if(_n < partiRisorsa.size())
+		{
+			return partiRisorsa.get(_n).part;
+		}else{
+			return false;
+		}	
+	}
+	
+	/****************************************************************************************\
+	|	public void setPart(int _n, boolean _value)
+	|	description: setta la parte di risorsa indicata con un determinato valore (_value)
+	\****************************************************************************************/
+	public void setPart(int _n, boolean _value)
+	{
+		if(_n < partiRisorsa.size())
+		{
+			partiRisorsa.get(_n).part = _value;
+		}
+	}
 
 } //end class Resource

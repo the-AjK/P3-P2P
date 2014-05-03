@@ -117,6 +117,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 						}catch(Exception ee){
 							if(SERVER_OK || FIRST_TIME)
 							{
+								model.setLogColor(Color.RED); 
 								model.addLogText("[check_T] il server " + model.getServer2Connect() + " è offline.");
 								if(model.getDisconnectBtext().equals(DISCONNECT_BUTTON_TEXT) ||  //se ero connesso
 								   model.getDisconnectBtext().equals(CONNECTION_BUTTON_TEXT) )	 //oppure in fase di connessione
@@ -213,7 +214,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 				System.out.println("cerca" + view.getFindText());
 				synchronized(model)
 				{
-					model.addResourceToDownloadQueue(new Resource("J",8));
+					model.addResourceToDownloadQueue(new Resource("J",8,false));
 				}
 				break;
 				
@@ -360,15 +361,15 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 		{
 			try
 			{
-				partiRisorsa=Integer.parseInt(_R[i+1]);		//provo a convertire il numero di parti della risorsa
+				partiRisorsa = Integer.parseInt(_R[i+1]);	//provo a convertire il numero di parti della risorsa
 			}catch(NumberFormatException nfe)
 			{
 				continue;									//se non è un valore numerico non la considero
 			}
 			if(partiRisorsa==0){continue;}					//risorse con zero parti non le considero
 			
-			//se la risorsa va bene, la aggiungo 
-			model.addResource(new Resource(_R[i],partiRisorsa));
+			//se la risorsa va bene, la aggiungo come piena (true)
+			model.addResource(new Resource(_R[i],partiRisorsa,true));
 		}
 				
 		model.setLogColor(Color.RED);

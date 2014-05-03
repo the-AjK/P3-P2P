@@ -33,8 +33,7 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 	private static final int CHECKCONNECTIONS_TIMEOUT = 3000;	//controllo connessioni in background [ms]
 	
 	//impostazioni NON modificabili
-	private static final String RMITAG = "P3-P2P-JK"; 			//chiave identificativa dei server per il registro RMI
-	
+	private static final String RMITAG = "P3-P2P-JK"; 			//chiave identificativa dei server per il registro RMI	
 	private boolean autoShutdownActive = false;					//flag che indica se è attivo l'autoShutdown
 			
 	//riferimenti alle componenti View e Model
@@ -96,7 +95,7 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 					catch(Exception e)
 					{
 						model.setLogColor(Color.RED);
-						model.addLogText("[check_thread] FATAL ERROR! connessione RMI non riuscita.");
+						model.addLogText("[check_T] FATAL ERROR! connessione RMI non riuscita.");
 						autoShutdown(AUTO_SHUTDOWN_TIMEOUT);
 					}
 					
@@ -113,7 +112,7 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 								
 								}
 							}catch(Exception e){
-								model.addLogText("[check_thread] il server " + model.getServer(i).getName() + " è offline.");
+								model.addLogText("[check_T] il server " + model.getServer(i).getName() + " è offline.");
 								model.removeServer(model.getServer(i).getName());
 							}		
 						}					
@@ -130,7 +129,7 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 								
 								}
 							}catch(Exception e){
-								model.addLogText("[check_thread] il client " + model.getClient(i).getName() + " è offline.");
+								model.addLogText("[check_T] il client " + model.getClient(i).getName() + " è offline.");
 								model.removeClient(model.getClient(i).getName());
 							}		
 						}					
