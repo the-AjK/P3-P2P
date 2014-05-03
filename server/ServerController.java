@@ -254,7 +254,7 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 		if(serverTrovati == 0)
 		{
 			model.addLogTextToLine(logPos," completata!");
-			model.addLogText("nessun server online.");
+			model.addLogText("nessun altro server online.");
 		}else{
 			model.addLogText("ricerca server online completata! trovati " + serverTrovati + " server di cui " + serverConnessi + " online.");
 		}
