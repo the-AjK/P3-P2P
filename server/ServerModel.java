@@ -8,6 +8,7 @@
 |	Package: server
 |	Version: 0.1 - creazione struttura scheletro
 |			 1.0 - aggiunti campi dati e relativi metodi set/get
+|			 1.1 - aggiunto logo iniziale
 |
 \****************************************************************************************/
 package server;
@@ -27,6 +28,7 @@ public class ServerModel extends java.util.Observable
 	private Vector<DeviceServer> servers;	//server connessi
 	private Vector<String> log;				//log di sistema
 	private Color coloreLog;				//colore testo della casella log
+	private String animationIcon;			//piccola icona di animazione per visualizzare lo stato del client
 	
 	/****************************************************************************************\
 	|	public ServerModel()
@@ -39,7 +41,13 @@ public class ServerModel extends java.util.Observable
 		clients = new Vector<DeviceClient>();
 		servers = new Vector<DeviceServer>();
 		log = new Vector<String>();
-		log.add("P3-P2P Server (C) JK");
+		log.add("  ______  ______          ______  ______  ______ ");  
+		log.add(" |   __ \\|__    | ______ |   __ \\|__    ||   __ \\"); 
+		log.add(" |    __/|__    ||______||    __/|    __||    __/"); 
+		log.add(" |___|   |______|        |___|   |______||___|	  "); 
+		log.add("                          P3-P2P Server (C) JK   ");   
+		log.add("--------------------------------------------------");
+		animationIcon = "P2P";
 	}
 	
 	/****************************************************************************************\
@@ -51,6 +59,22 @@ public class ServerModel extends java.util.Observable
 		setChanged();
 		notifyObservers();
 	}
+	
+	/****************************************************************************************\
+	|	public String getAnimIcon()
+	|	description: restituisce l'icona
+	\****************************************************************************************/
+	public String getAnimIcon(){return animationIcon;}
+	
+	/****************************************************************************************\
+	|	public void setAnimIcon(String _s)
+	|	description: setta l'icona
+	\****************************************************************************************/
+	public void setAnimIcon(String _s)
+	{
+		animationIcon = _s;
+		viewRefresh();
+	}	
 
 	/****************************************************************************************\
 	|	public String getServerName()

@@ -8,6 +8,7 @@
 |	Package: client
 |	Version: 0.1 - creazione struttura scheletro
 |			 1.0 - aggiunti campi dati e relativi metodi set/get
+|			 1.1 - aggiunto logo iniziale
 |
 \****************************************************************************************/
 package client;
@@ -49,7 +50,7 @@ public class ClientModel extends java.util.Observable
 		log.add(" |___|   |______|        |___|   |______||___|	  "); 
 		log.add("                          P3-P2P Client (C) JK   ");   
 		log.add("--------------------------------------------------");
-		animationIcon = "[-]";
+		animationIcon = "P2P";
 	}
 	
 	/****************************************************************************************\

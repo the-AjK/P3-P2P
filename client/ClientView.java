@@ -85,7 +85,7 @@ public class ClientView implements java.util.Observer
 		
 		downloadQueue = new JTextArea();
 		JScrollPane downloadQueueList = new JScrollPane(downloadQueue);
-		downloadQueueList.setBorder(BorderFactory.createTitledBorder("Coda download"));// [MAX "+ D +" slots]"));
+		downloadQueueList.setBorder(BorderFactory.createTitledBorder("Coda download"));
 		fileStatusP.add(downloadQueueList);
 		
 		//preparo il log sottostante
@@ -136,7 +136,7 @@ public class ClientView implements java.util.Observer
 	\****************************************************************************************/
 	public void update(Observable _obs, Object _obj)
 	{
-		frame.setTitle(model.getAnimIcon() + " Client " + model.getClientName() + " per " + model.getServer2Connect());
+		frame.setTitle("P3-" + model.getAnimIcon() + " Client " + model.getClientName() + " per " + model.getServer2Connect());
 		disconnectB.setText(model.getDisconnectBtext());
 		disconnectB.setEnabled(model.getDisconnectBenabled());
 		findB.setEnabled(model.getFindBenabled());

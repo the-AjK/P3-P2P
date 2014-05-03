@@ -56,6 +56,7 @@ public class ServerView implements java.util.Observer
 		
 		//preparo il log
 		log = new JTextArea();
+		log.setFont(new Font("Monospaced", Font.PLAIN, 11));
 		JScrollPane logList = new JScrollPane(log);
 		DefaultCaret caret = (DefaultCaret) log.getCaret(); //scrolling continuo verso il basso
 		caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
@@ -87,7 +88,7 @@ public class ServerView implements java.util.Observer
 	\****************************************************************************************/
 	public void update(Observable _obs, Object _obj)
 	{
-		frame.setTitle("Server " + model.getServerName());
+		frame.setTitle("P3-" + model.getAnimIcon() + " Server " + model.getServerName());
 		clients.setText(model.getClientsText());
 		servers.setText(model.getServersText());
 		log.setText(model.getLogText());

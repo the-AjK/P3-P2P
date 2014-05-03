@@ -27,7 +27,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 	private static final int DOWNLOAD_TIMEOUT = 3000;						//tempo per simulare il download di una parte di risorsa
 	
 	//impostazioni NON modificabili
-	private static final int CHECKCONNECTIONS_TIMEOUT = 30;				//controllo connessione in background (300ms * 8 = 2.4sec)
+	private static final int CHECKCONNECTIONS_TIMEOUT = 3000;				//timeout per controllo connessione in background
 	private static final String RMITAG = "P3-P2P-JK"; 						//chiave identificativa per il registro RMI
 	private static final String CONNECT_BUTTON_TEXT    = "Connetti";		//testo del pulsante di disconnessione
 	private static final String DISCONNECT_BUTTON_TEXT = "Disconnetti";	
@@ -74,21 +74,19 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 				boolean RMI_OK = false;		//FLAG che indica lo stato della connessione al registro RMI
 				boolean SERVER_OK = false;	//FLAG status del mio server
 				IServer ref;				//riferimento remoto del mio server
-				
-				String[] animIcon = {"-","\\","|","/","-","\\","|","/"};
-				//String[] animIcon = {"è","\\","|","/","-","\\","|","/"};
-				//String[] animIcon = {"..._.-._","\\","|","/","-","\\","|","/"};
+				String[] animIcon = {"PSP","P2P"};
 				model.addLogText("[check_thread] connessione automatica avviata...");
 				model.setDisconnectBtext(CONNECTION_BUTTON_TEXT);
 				
 				while(true)
 				{
-					//animazione durante l'attesa
+					//animazione durante l'attesa, lampeggio veloce del titolo
 					for(int i=0; i<animIcon.length; i++)
 					{
-						try{sleep(CHECKCONNECTIONS_TIMEOUT);}catch(InterruptedException ie){}					
-						model.setAnimIcon(animIcon[i]);
+						try{sleep(100);}catch(InterruptedException ie){}					
+						model.setAnimIcon(animIcon[i]);							
 					}
+					try{sleep(CHECKCONNECTIONS_TIMEOUT);}catch(InterruptedException ie){}	
 					
 						String[] serverNamesList = {};
 						try{

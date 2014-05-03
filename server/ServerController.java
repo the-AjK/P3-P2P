@@ -27,7 +27,7 @@ import java.awt.event.*;
 public class ServerController extends UnicastRemoteObject implements IServer, ActionListener, WindowListener
 {
 	//impostazioni modificabili
-	private static final String HOST = "localhost:1099";	//host per la connessione RMI
+	private static final String HOST = "localhost:1099";		//host per la connessione RMI
 	
 	//impostazioni NON modificabili
 	private static final int CHECKCONNECTIONS_TIMEOUT = 3000;	//controllo connessione in background ogni 3secondi
@@ -74,11 +74,17 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 		checkConnections = new Thread(){ 
 			public void run()
 			{
+				String[] animIcon = {"PSP","P2P"};
 				while(true)
 				{
-					//aspetto tre secondi prima di controllare
-					try{sleep(CHECKCONNECTIONS_TIMEOUT);}catch(InterruptedException ie){}
-					
+					//animazione durante l'attesa, lampeggio veloce del titolo
+					for(int i=0; i<animIcon.length; i++)
+					{
+						try{sleep(100);}catch(InterruptedException ie){}					
+						model.setAnimIcon(animIcon[i]);							
+					}
+					try{sleep(CHECKCONNECTIONS_TIMEOUT);}catch(InterruptedException ie){}	
+										
 					//Controllo la presenza dell'RMI registry
 					try{
 						Naming.list("//" + HOST );
@@ -246,7 +252,8 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 		if(serverTrovati > 0) serverTrovati--;				//rimuovo me stesso
 		if(serverTrovati == 0)
 		{
-			model.addLogTextToLine(logPos," completata! Nessun server online.");
+			model.addLogTextToLine(logPos," completata!");
+			model.addLogText("nessun server online.");
 		}else{
 			model.addLogText("ricerca server online completata! trovati " + serverTrovati + " server di cui " + serverConnessi + " online.");
 		}
