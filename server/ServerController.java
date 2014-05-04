@@ -7,9 +7,9 @@
 |	Description: componente controller del pattern MVC
 |	Package: server
 |	Version: 0.1 - creazione struttura scheletro
-|			 0.2 - implementata ricerca server online leggendo il registro RMI
+|			 0.2 - implementata ricerca server online leggendo il registro pubblico RMI
 |			 0.3 - connessione automatica dei server online
-|			 0.4 - creazione del thread checkConnections per eliminare i server offline
+|			 0.4 - aggiunta gestione threads in background
 |
 \****************************************************************************************/
 package server;
@@ -464,6 +464,51 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 			model.addLogText("il client " + _clientName + " si è disconnesso!");
 		} 	
 		return true;
+	}
+	
+	/****************************************************************************************\
+	|	public Vector<DeviceClient> findResourceForServer(String _serverName, Resource _risorsa) 
+	|	description: implementazione del metodo remoto dell'interfaccia IServer
+	\****************************************************************************************/
+	public Vector<DeviceClient> findResourceForServer(String _serverName, Resource _risorsa) throws RemoteException
+	{
+		//TODO lanciare un thread di ricerca
+		Vector<DeviceClient> listaClient = new Vector<DeviceClient>();
+		
+		if(VERBOSE_LOG)
+			model.addLogText("il server " + _serverName + " richiede ricerca di " + _risorsa.getName() + " " + _risorsa.getNparts());
+		
+		return listaClient;
+	}
+
+	/****************************************************************************************\
+	|	public Vector<DeviceClient> findResourceForClient(String _clientName, Resource _risorsa) 
+	|	description: implementazione del metodo remoto dell'interfaccia IServer
+	\****************************************************************************************/
+	public Vector<DeviceClient> findResourceForClient(String _clientName, Resource _risorsa) throws RemoteException
+	{
+		//TODO lanciare un thread di ricerca
+				
+		if(VERBOSE_LOG)
+			model.addLogText("il client " + _clientName + " richiede ricerca di " + _risorsa.getName() + " " + _risorsa.getNparts());
+		
+		//cerco tra i miei client locali se la risorsa è presente
+		Vector<DeviceClient> listaClient = model.getClientsOwnResourceList(_risorsa);
+		
+		//ora inoltro la richiesta a tutti i server a cui sono collegato
+		DeviceServer server;
+		for(int i=0; i<model.getNservers(); i++)
+		{
+			server = model.getServerList().get(i); 
+			try{
+				//inoltro la richiesta al server ed aggiungo la risposta nella listaClient
+				listaClient.addAll(server.getRef().findResourceForServer(model.getServerName(),_risorsa));
+				
+			}catch(Exception e){
+				model.addLogText("errore inoltro richiesta al server " + server.getName());
+			}
+		}		
+		return listaClient;
 	}
 
 }//end class ServerController()

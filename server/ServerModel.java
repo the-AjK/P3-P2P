@@ -153,6 +153,33 @@ public class ServerModel extends java.util.Observable
 	}
 	
 	/****************************************************************************************\
+	|	public Vector<DeviceClient> getClientsOwnResourceList(Resource _risorsa)
+	|	description: restituisce una lista di client che possiedono una determinata risorsa
+	\****************************************************************************************/
+	public Vector<DeviceClient> getClientsOwnResourceList(Resource _risorsa)
+	{
+		Vector<DeviceClient> res = new Vector<DeviceClient>();
+		Resource risorsa;
+		DeviceClient client;
+		
+		for(int i=0; i<clients.size(); i++)		//scorro la lista di clients
+		{
+			client = clients.get(i);
+			for(int j=0; j<client.getNresource(); j++) //scorro la lista delle risorse
+			{
+				risorsa = client.getResource(j);
+				if(risorsa.getName().equals(_risorsa.getName()) &&
+					risorsa.getNparts() == _risorsa.getNparts() )
+				{
+					res.add(client);	//aggiungo il client che possiede la risorsa
+					break;
+				}
+			}
+		}
+		return res;
+	}
+	
+	/****************************************************************************************\
 	|	public DeviceServer getServer(int _n)
 	|	description: restituisce il DeviceServer specificato 
 	\****************************************************************************************/

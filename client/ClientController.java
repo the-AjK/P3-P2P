@@ -8,6 +8,7 @@
 |	Package: client
 |	Version: 0.1 - creazione struttura scheletro
 |			 0.2 - gestione disconnessione server e registro RMI
+|			 0.3 - aggiunta gestione threads in background
 |
 \****************************************************************************************/
 package client;
@@ -18,9 +19,11 @@ import java.awt.event.*;
 import java.util.Vector; 
 import java.awt.Color;
 import common.Resource;
+import common.DeviceClient;
 import server.IServer;
+import java.io.Serializable;
 
-public class ClientController extends UnicastRemoteObject implements IClient, ActionListener, WindowListener
+public class ClientController extends UnicastRemoteObject implements IClient, ActionListener, WindowListener, Serializable
 {
 	//impostazioni modificabili
 	private static final String HOST = "localhost:1099";					//host per la connessione RMI
@@ -187,11 +190,44 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 	\****************************************************************************************/
 	private class RicercaRisorseThread extends Thread
 	{
+		//campi dati
+		private Resource risorsaDaCercare;
+		private Vector<DeviceClient> listaClient;
+		
+		public RicercaRisorseThread(String _nomeRisorsa, int _partiRisorsa)
+		{
+			risorsaDaCercare = new Resource(_nomeRisorsa, _partiRisorsa, false);
+			listaClient = new Vector<DeviceClient>(); //lista di clients che hanno la risorsa 
+		}
+		
 		public void run()
 		{
+			model.addLogText("[ricerca_T] ricerca risorsa " + risorsaDaCercare.getName() + " " + risorsaDaCercare.getNparts() + " in corso...");	
 			
-			
-			
+			try{
+				IServer ref = (IServer) Naming.lookup("rmi://" + HOST + "/" + RMITAG + "/" + model.getServer2Connect());
+				listaClient = ref.findResourceForClient(model.getClientName(),risorsaDaCercare);	//richiamo il metodo remoto per inoltrare la richiesta al server
+				
+				if(VERBOSE_LOG)	//stampo la lista di clients che hanno la risorsa cercata
+					for(int i=0; i<listaClient.size(); i++)
+						model.addLogText("[ricerca_T] il client " + listaClient.get(i).getName() + " ha la risorsa " + risorsaDaCercare.getName() + " " + risorsaDaCercare.getNparts());	
+				
+				if(listaClient.size() > 0) //se esiste almeno un client che possiede la risorsa aggiungo in coda download
+				{
+					synchronized(model)
+					{
+						//TODO oltre ad aggiungere la risorsa, bisogna aggiungere anche la lista di clients che ce l'hanno! 
+						model.addResourceToDownloadQueue(risorsaDaCercare);
+					}				
+					model.addLogText("[ricerca_T] risorsa " + risorsaDaCercare.getName() + " " + risorsaDaCercare.getNparts() + " aggiunta in coda download!");	
+					view.setFindText(""); //ora che la risorsa è stata aggiunta svuoto il campo di testo
+				}else{
+					model.addLogText("[ricerca_T] risorsa " + risorsaDaCercare.getName() + " " + risorsaDaCercare.getNparts() + " non trovata!");
+				}
+			}catch(Exception e){
+				e.printStackTrace();
+				model.addLogText("[ricerca_T] impossibile comunicare con il server!");
+			}							
 		}//end run()
 		
 	}//class RicercaRisorseThread
@@ -259,7 +295,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 				int secondWhiteChar = textArea.indexOf(" ",firstWhiteChar + 1);
 				if(firstWhiteChar<=0)
 				{
-					model.addLogText("[ricerca] inserisci nome risorsa!");		//manca il nome della risorsa da cercare
+					model.addLogText("[input_err] inserisci nome risorsa!");		//manca il nome della risorsa da cercare
 					view.setFindText("");
 					break;
 				} 	
@@ -268,7 +304,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 				
 				if(secondWhiteChar<=0)
 				{
-					model.addLogText("[ricerca] nome risorsa incompleto o errato!");	//manca il numero di parti della risorsa da cercare
+					model.addLogText("[input_err] nome risorsa incompleto o errato!");	//manca il numero di parti della risorsa da cercare
 					view.setFindText(nomeRisorsa);
 					break;
 				} 
@@ -284,12 +320,12 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 					partiRisorsa = Integer.parseInt(partiRisorsaText);	//provo a convertire il numero di parti della risorsa
 				}catch(NumberFormatException nfe)
 				{
-					model.addLogText("[ricerca] formato numerico parti risorsa errato!");
+					model.addLogText("[input_err] formato numerico parti risorsa errato!");
 					break;
 				}
 				if(partiRisorsa <= 0)
 				{
-					model.addLogText("[ricerca] impossibile cercare risorse vuote!");
+					model.addLogText("[input_err] impossibile cercare risorse vuote!");
 					break;
 				}					
 				
@@ -298,27 +334,17 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 				//ora cerco se ho già la risorsa che l'utente sta cercando
 				if(model.resourceIsHere(nomeRisorsa,partiRisorsa))
 				{
-					model.addLogText("[ricerca] risorsa già presente!");
+					model.addLogText("[input_err] risorsa già presente!");
 					break;
 				}				
 				if(model.resourceIsDownloading(nomeRisorsa,partiRisorsa))
 				{
-					model.addLogText("[ricerca] risorsa già in coda download!");
+					model.addLogText("[input_err] risorsa già in coda download!");
 					break;
 				}				
 						
-				model.addLogText("[ricerca] ricerca risorsa " + nomeRisorsa + " " + partiRisorsa + " in corso...");	
-				
-				//TODO lancio il thread ricerca che aggiungera la risorsa nella lista di download in caso di risposta positiva.
-				
-				(new RicercaRisorseThread()).start();
-				
-				synchronized(model)
-				{
-					model.addResourceToDownloadQueue(new Resource(nomeRisorsa,partiRisorsa,false));
-				}
-				
-				view.setFindText(""); //ora che la risorsa è stata aggiunta svuoto il campo di testo
+				//ora che tutto torna creo il thread di ricerca, lo avvio ed esco!
+				(new RicercaRisorseThread(nomeRisorsa,partiRisorsa)).start();
 				break;
 				
 			case CONNECT_BUTTON_TEXT:

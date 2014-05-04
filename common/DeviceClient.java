@@ -13,8 +13,9 @@ package common;
 
 import java.util.Vector;
 import client.IClient;
+import java.io.Serializable;
 
-public class DeviceClient
+public class DeviceClient implements Serializable
 {
 	private String nomeClient;			//nome del client
 	private IClient ref;				//riferimento remoto del client
