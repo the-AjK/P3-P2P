@@ -203,18 +203,67 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 	}
 	
 	/****************************************************************************************\
-	|	public void actionPerformed(java.awt.event.ActionEvent _e)
+	|	public void actionPerformed(ActionEvent _e)
 	|	description: gestore degli input utenti provenienti dalla componente view
 	\****************************************************************************************/
-	public void actionPerformed(java.awt.event.ActionEvent _e)
+	public void actionPerformed(ActionEvent _e)
 	{
 		switch(_e.getActionCommand())
 		{
 			case FIND_BUTTON_TEXT:
-				System.out.println("cerca" + view.getFindText());
+				String textArea = view.getFindText() + " ";				//recupero la stringa cercata dalla view con sentinella finale
+				
+				int firstChar = 0;
+				while(firstChar < textArea.length()-1 && textArea.charAt(firstChar) == ' ')	//elimino gli spazi vuoti iniziali
+					firstChar++;	
+				textArea = textArea.substring(firstChar);				
+				
+				int firstWhiteChar = textArea.indexOf(" ");
+				int secondWhiteChar = textArea.indexOf(" ",firstWhiteChar + 1);
+				if(firstWhiteChar<=0)
+				{
+					model.addLogText("[ricerca] inserisci nome risorsa!");		//manca il nome della risorsa da cercare
+					view.setFindText("");
+					break;
+				} 	
+				
+				String nomeRisorsa = textArea.substring(0,firstWhiteChar);		//recupero il nome della risorsa
+				
+				if(secondWhiteChar<=0)
+				{
+					model.addLogText("[ricerca] nome risorsa incompleto o errato!");	//manca il numero di parti della risorsa da cercare
+					view.setFindText(nomeRisorsa);
+					break;
+				} 
+
+				while(firstWhiteChar < textArea.length()-1 && textArea.charAt(firstWhiteChar) == ' ')	//elimino gli spazi vuoti intermedi
+					firstWhiteChar++;	
+				secondWhiteChar = textArea.indexOf(" ",firstWhiteChar);
+				String partiRisorsaText = textArea.substring(firstWhiteChar, secondWhiteChar); 			//recupero il numero di parti
+		
+				int partiRisorsa = 0;
+				try
+				{
+					partiRisorsa = Integer.parseInt(partiRisorsaText);	//provo a convertire il numero di parti della risorsa
+				}catch(NumberFormatException nfe)
+				{
+					model.addLogText("[ricerca] formato numerico parti risorsa errato!");
+					break;
+				}
+				if(partiRisorsa <= 0)
+				{
+					model.addLogText("[ricerca] impossibile cercare risorse vuote!");
+					break;
+				}					
+			
+				view.setFindText(nomeRisorsa + " " + partiRisorsa);				
+				model.addLogText("[ricerca] ricerca risorsa " + nomeRisorsa + " " + partiRisorsa + " in corso...");	
+				
+				//TODO lancio il thread ricerca che agggiungera la risorsa nella lista di download in caso di risposta positiva.
+				
 				synchronized(model)
 				{
-					model.addResourceToDownloadQueue(new Resource("J",8,false));
+					model.addResourceToDownloadQueue(new Resource(nomeRisorsa,partiRisorsa,false));
 				}
 				break;
 				
@@ -364,7 +413,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 				partiRisorsa = Integer.parseInt(_R[i+1]);	//provo a convertire il numero di parti della risorsa
 			}catch(NumberFormatException nfe)
 			{
-				continue;									//se non è un valore numerico non la considero
+				continue;									//se non è un valore numerico non la considero				
 			}
 			if(partiRisorsa==0){continue;}					//risorse con zero parti non le considero
 			

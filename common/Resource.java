@@ -19,14 +19,19 @@ public class Resource implements Serializable
 {
 	private class ResourcePart implements Serializable
 	{
-		public boolean part;
-		public ResourcePart(boolean _part){part = _part;}
+		public boolean part;						//contenuto informativo della parte di risorsa
+		public Vector<DeviceClient> logDownload;	//ogni parte di risorsa ha un log download che indica
+													//quanti e quali clients l'hanno scaricata
+		public ResourcePart(boolean _part)			
+		{
+			part = _part;
+			logDownload = new Vector<DeviceClient>();
+		}
 	}
 	
 	//campi dati
 	private String nomeRisorsa;						//nome della risorsa
-	private Vector<ResourcePart> partiRisorsa;		//parti della risorsa 
-		
+	private Vector<ResourcePart> partiRisorsa;		//parti della risorsa 		
 	
 	/****************************************************************************************\
 	|	public Resource(String _nomeRisorsa, int _nparti, boolean _initValue)
