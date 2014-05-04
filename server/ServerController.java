@@ -472,13 +472,14 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 	\****************************************************************************************/
 	public Vector<DeviceClient> findResourceForServer(String _serverName, Resource _risorsa) throws RemoteException
 	{
-		//TODO lanciare un thread di ricerca
-		Vector<DeviceClient> listaClient = new Vector<DeviceClient>();
+		//TODO lanciare un thread di ricerca?
 		
 		if(VERBOSE_LOG)
 			model.addLogText("il server " + _serverName + " richiede ricerca di " + _risorsa.getName() + " " + _risorsa.getNparts());
 		
-		return listaClient;
+		//cerco tra i miei client locali se la risorsa è presente
+		return model.getClientsOwnResourceList(_risorsa);
+		
 	}
 
 	/****************************************************************************************\
@@ -487,7 +488,7 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 	\****************************************************************************************/
 	public Vector<DeviceClient> findResourceForClient(String _clientName, Resource _risorsa) throws RemoteException
 	{
-		//TODO lanciare un thread di ricerca
+		//TODO lanciare un thread di ricerca?
 				
 		if(VERBOSE_LOG)
 			model.addLogText("il client " + _clientName + " richiede ricerca di " + _risorsa.getName() + " " + _risorsa.getNparts());

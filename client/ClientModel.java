@@ -21,16 +21,36 @@ import common.Resource;
 public class ClientModel extends java.util.Observable 
 {
 	//campi dati
-	private DeviceClient me;				//contiene nomeClient, riferimento e lista risorse
-	private String server2connect;			//nome del server a cui connettersi
-	private int downloadCapacity;			//capacità di download
-	private Vector<String> log;				//log di sistema
-	private Color coloreLog;				//colore testo della casella log
-	private boolean findBenabled;			//flag che indica se il pulsante di ricerca è abilitato oppure no
-	private boolean disconnectBenabled;		//flag che indica se il pulsante di disconnessione è abilitato oppure no
-	private String disconnectBtext;			//testo del pulsante di disconnessione
-	private Vector<Resource> downloadQueue;	//lista di risorse in fase di download
-	private String animationIcon;			//piccola icona di animazione per visualizzare lo stato del client
+	private DeviceClient me;								//contiene nomeClient, riferimento e lista risorse
+	private String server2connect;							//nome del server a cui connettersi
+	private int downloadCapacity;							//capacità di download
+	private Vector<String> log;								//log di sistema
+	private Color coloreLog;								//colore testo della casella log
+	private boolean findBenabled;							//flag che indica se il pulsante di ricerca è abilitato oppure no
+	private boolean disconnectBenabled;						//flag che indica se il pulsante di disconnessione è abilitato oppure no
+	private String disconnectBtext;							//testo del pulsante di disconnessione
+	private Vector<ResourceDownloadQueue> downloadQueue;	//lista di risorse in fase di download
+	private String animationIcon;							//piccola icona di animazione per visualizzare lo stato del client
+	
+	private class ResourceDownloadQueue
+	{
+		public Resource risorsa;							//risorsa in download
+		public Vector<DeviceClient> listaClient;			//lista di client che possiedono la risorsa
+		public ResourceDownloadQueue(Resource _risorsa, Vector<DeviceClient> _listaClient)
+		{
+			risorsa = _risorsa;
+			listaClient = _listaClient;
+		}	
+		
+		/****************************************************************************************\
+		|	public void removeClient(String _nomeClient)
+		|	description: rimuove un client dalla listaClient che possiedono una risorsa
+		\****************************************************************************************/
+		public void removeClient(String _nomeClient)
+		{
+		
+		}
+	}
 	
 	/****************************************************************************************\
 	|	public ClientModel() 
@@ -42,7 +62,7 @@ public class ClientModel extends java.util.Observable
 		me = new DeviceClient(); //creo me stesso
 		server2connect = "";
 		downloadCapacity = 0;
-		downloadQueue = new Vector<Resource>();
+		downloadQueue = new Vector<ResourceDownloadQueue>();
 		log = new Vector<String>();
 		log.add("  ______  ______          ______  ______  ______ ");  
 		log.add(" |   __ \\|__    | ______ |   __ \\|__    ||   __ \\"); 
@@ -108,12 +128,12 @@ public class ClientModel extends java.util.Observable
 	}
 	
 	/****************************************************************************************\
-	|	public void addResourceToDownloadQueue()
+	|	public void addResourceToDownloadQueue(Resource _res, Vector<DeviceClient> _listaClient)
 	|	description: aggiunge una risorsa in coda download
 	\****************************************************************************************/
-	public void addResourceToDownloadQueue(Resource _res)
+	public void addResourceToDownloadQueue(Resource _res, Vector<DeviceClient> _listaClient)
 	{
-		downloadQueue.add(_res);
+		downloadQueue.add(new ResourceDownloadQueue(_res,_listaClient));
 		viewRefresh();
 	}
 	
@@ -127,11 +147,11 @@ public class ClientModel extends java.util.Observable
 		Integer nparti=0;
 		for(int i=0; i<downloadQueue.size(); i++)
 		{
-			nparti = downloadQueue.get(i).getNparts();
-			res = res + downloadQueue.get(i).getName() + " [ ";
+			nparti = downloadQueue.get(i).risorsa.getNparts();
+			res = res + downloadQueue.get(i).risorsa.getName() + " [ ";
 			for(int j=0; j<nparti; j++)
 			{
-				if(downloadQueue.get(i).isPartEmpty(j))
+				if(downloadQueue.get(i).risorsa.isPartEmpty(j))
 				{
 					res = res + "_ ";
 				}else{
@@ -151,8 +171,8 @@ public class ClientModel extends java.util.Observable
 	{
 		for(int i=0; i<downloadQueue.size(); i++)
 		{
-			if(downloadQueue.get(i).getName().equals(_nomeRisorsa) &&
-				downloadQueue.get(i).getNparts() == _partiRisorsa
+			if(downloadQueue.get(i).risorsa.getName().equals(_nomeRisorsa) &&
+				downloadQueue.get(i).risorsa.getNparts() == _partiRisorsa
 			)return true;
 		}
 		return false;

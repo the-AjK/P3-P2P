@@ -215,9 +215,8 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 				if(listaClient.size() > 0) //se esiste almeno un client che possiede la risorsa aggiungo in coda download
 				{
 					synchronized(model)
-					{
-						//TODO oltre ad aggiungere la risorsa, bisogna aggiungere anche la lista di clients che ce l'hanno! 
-						model.addResourceToDownloadQueue(risorsaDaCercare);
+					{ 
+						model.addResourceToDownloadQueue(risorsaDaCercare, listaClient);
 					}				
 					model.addLogText("[ricerca_T] risorsa " + risorsaDaCercare.getName() + " " + risorsaDaCercare.getNparts() + " aggiunta in coda download!");	
 					view.setFindText(""); //ora che la risorsa è stata aggiunta svuoto il campo di testo
