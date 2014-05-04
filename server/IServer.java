@@ -30,7 +30,7 @@ public interface IServer extends Remote
 	|	public boolean connectMEServer(String _serverName)
 	|	description: utilizzato dai server per richiedere la connessione al server
 	\****************************************************************************************/
-	public boolean connectMEServer(String _serverName) throws RemoteException;
+	public boolean connectMEServer(String _serverName, IServer _serverRef) throws RemoteException;
 	
 	/****************************************************************************************\
 	|	public boolean connectMEClient(String _clientName, IClient _clientRef)

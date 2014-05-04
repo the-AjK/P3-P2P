@@ -70,8 +70,8 @@ public class ClientStarter
 			String[] risorse = new String[args.length-3];
 			System.arraycopy(args,3,risorse,0,args.length-3);
 		
-			ClientStarter s=new ClientStarter(	args[0],					//nome client
-												args[1],					//nome server
+			ClientStarter s=new ClientStarter(	args[0].toLowerCase(),		//nome client
+												args[1].toLowerCase(),		//nome server
 												Integer.parseInt(args[2]),	//capacità di download
 												risorse			//stringhe (nome risorsa + n_parti)
 											  );

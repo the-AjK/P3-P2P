@@ -143,6 +143,35 @@ public class ClientModel extends java.util.Observable
 		return res;
 	}
 	
+	/****************************************************************************************\
+	|	public boolean resourceIsDownloading(String _nomeRisorsa, int _partiRisorsa)
+	|	description: restituisce true se la risorsa è nella coda download
+	\****************************************************************************************/
+	public boolean resourceIsDownloading(String _nomeRisorsa, int _partiRisorsa)
+	{
+		for(int i=0; i<downloadQueue.size(); i++)
+		{
+			if(downloadQueue.get(i).getName().equals(_nomeRisorsa) &&
+				downloadQueue.get(i).getNparts() == _partiRisorsa
+			)return true;
+		}
+		return false;
+	}	
+	
+	/****************************************************************************************\
+	|	public boolean resourceIsHere(String _nomeRisorsa, int _partiRisorsa)
+	|	description: restituisce true se la risorsa è presente nella lista risorse
+	\****************************************************************************************/
+	public boolean resourceIsHere(String _nomeRisorsa, int _partiRisorsa)
+	{
+		for(int i=0; i<me.getNresource(); i++)
+		{
+			if(me.getResource(i).getName().equals(_nomeRisorsa) &&
+				me.getResource(i).getNparts() == _partiRisorsa
+			)return true;
+		}
+		return false;
+	}	
 	
 	/****************************************************************************************\
 	|	public String getResourceListText()

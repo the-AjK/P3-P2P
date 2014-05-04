@@ -59,7 +59,7 @@ public class ServerStarter
 				System.out.println("     ServerStarter --help (display this help)\n");
 				System.exit(0);				
 			}	
-			ServerStarter s = new ServerStarter(	args[0]	//nome server
+			ServerStarter s = new ServerStarter(	args[0].toLowerCase()	//nome server
 												);
 		}
 		catch(Exception e)

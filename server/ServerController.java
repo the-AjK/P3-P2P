@@ -41,7 +41,7 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 	private ServerModel model;
 	
 	//threads del server
-	Thread checkConnections;									//thread che controlla i devices connessi
+	CheckConnectionsThread checkConnections;		//thread che controlla la connessione con RMI ed il server
 	
 	/****************************************************************************************\
 	|	public ServerController()
@@ -49,7 +49,7 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 	\****************************************************************************************/
 	public ServerController() throws Exception
 	{
-	
+		checkConnections = new CheckConnectionsThread();
 	}
 	
 	/****************************************************************************************\
@@ -64,83 +64,89 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 		model.addLogTextToLine(logPos," completata!");
 		model.setLogColor(Color.BLUE);
 		connect2server();								//controllo i server online e mi connetto ad essi
-		threadInit();									//avvio i thread che girano in background
+		startBackgroundThreads();						//avvio i threads che girano in background
 	}
 	
 	/****************************************************************************************\
-	|	private void threadInit()
-	|	description: inizializza i thread del server e li avvia
+	|	private void startBackgroundThreads()
+	|	description: avvia i thread in background del server
 	\****************************************************************************************/
-	private void threadInit() 
+	private void startBackgroundThreads()
 	{
-		//thread con ciclo continuo che controlla le connessioni con RMI, Server e Clients
-		checkConnections = new Thread(){ 
-			public void run()
+		//aggiungere qui thread da avviare in background...
+		checkConnections.start();
+	}
+	
+	/****************************************************************************************\
+	|	private class checkConnections
+	|	description: thread che controlla la connessione con RMI ed il server
+	\****************************************************************************************/
+	private class CheckConnectionsThread extends Thread
+	{
+		public void run()
+		{
+			String[] animIcon = {"PSP","P2P"};
+			while(true)
 			{
-				String[] animIcon = {"PSP","P2P"};
-				while(true)
+				//animazione durante l'attesa, lampeggio veloce del titolo
+				for(int i=0; i<animIcon.length; i++)
 				{
-					//animazione durante l'attesa, lampeggio veloce del titolo
-					for(int i=0; i<animIcon.length; i++)
-					{
-						try{sleep(100);}catch(InterruptedException ie){}					
-						model.setAnimIcon(animIcon[i]);							
-					}
-					try{sleep(CHECKCONNECTIONS_TIMEOUT);}catch(InterruptedException ie){}	
-										
-					//Controllo la presenza dell'RMI registry
-					try{
-						Naming.list("//" + HOST );
-					}
-					catch(Exception e)
-					{
-						model.setLogColor(Color.RED);
-						model.addLogText("[check_T] FATAL ERROR! connessione RMI non riuscita.");
-						autoShutdown(AUTO_SHUTDOWN_TIMEOUT);
-					}
-					
-					//controllo i server connessi alla ricerca di server morti :)
-					synchronized(model)	//prendo il lock sui dati del model
-					{
-						//ora controllo che tutta la mia lista server a cui sono connesso 
-						//siano ancora online
-						for(int i=0; i<model.getNservers(); i++)
-						{
-							try{
-								if(model.getServer(i).getRef().heartbeat().equals(IServer.HEARTBEAT_ANSWER)) //controllo se il server è vivo
-								{
-								
-								}
-							}catch(Exception e){
-								model.addLogText("[check_T] il server " + model.getServer(i).getName() + " è offline.");
-								model.removeServer(model.getServer(i).getName());
-							}		
-						}					
-					}//end synchronized(model)
-					
-					//controllo i clients connessi alla ricerca di clients morti :)
-					synchronized(model)	//prendo il lock sui dati del model
-					{
-						for(int i=0; i<model.getNclients(); i++)
-						{
-							try{
-								if(model.getClient(i).getRef().heartbeat().equals(IClient.HEARTBEAT_ANSWER)) //controllo se il client è vivo
-								{
-								
-								}
-							}catch(Exception e){
-								model.addLogText("[check_T] il client " + model.getClient(i).getName() + " è offline.");
-								model.removeClient(model.getClient(i).getName());
-							}		
-						}					
-					}//end synchronized(model)				
+					try{sleep(100);}catch(InterruptedException ie){}					
+					model.setAnimIcon(animIcon[i]);							
+				}
+				try{sleep(CHECKCONNECTIONS_TIMEOUT);}catch(InterruptedException ie){}	
+									
+				//Controllo la presenza dell'RMI registry
+				try{
+					Naming.list("//" + HOST );
+				}
+				catch(Exception e)
+				{
+					model.setLogColor(Color.RED);
+					model.addLogText("[check_T] FATAL ERROR! connessione RMI non riuscita.");
+					autoShutdown(AUTO_SHUTDOWN_TIMEOUT);
+				}
 				
-				}//end while(1)
-			}// end run()
-		};
-		checkConnections.start();	//avvio il thread
-		
-	} //end threadInit()
+				//controllo i server connessi alla ricerca di server morti :)
+				synchronized(model)	//prendo il lock sui dati del model
+				{
+					//ora controllo che tutta la mia lista server a cui sono connesso 
+					//siano ancora online
+					for(int i=0; i<model.getNservers(); i++)
+					{
+						try{
+							if(model.getServer(i).getRef().heartbeat().equals(IServer.HEARTBEAT_ANSWER)) //controllo se il server è vivo
+							{
+							
+							}
+						}catch(Exception e){
+							model.addLogText("[check_T] il server " + model.getServer(i).getName() + " è offline.");
+							model.removeServer(model.getServer(i).getName());
+						}		
+					}					
+				}//end synchronized(model)
+				
+				//controllo i clients connessi alla ricerca di clients morti :)
+				synchronized(model)	//prendo il lock sui dati del model
+				{
+					for(int i=0; i<model.getNclients(); i++)
+					{
+						try{
+							if(model.getClient(i).getRef().heartbeat().equals(IClient.HEARTBEAT_ANSWER)) //controllo se il client è vivo
+							{
+							
+							}
+						}catch(Exception e){
+							model.addLogText("[check_T] il client " + model.getClient(i).getName() + " è offline.");
+							model.removeClient(model.getClient(i).getName());
+						}		
+					}					
+				}//end synchronized(model)				
+			
+			}//end while(1)
+		}// end run()
+
+	} //end CheckConnectionsThread
 	
 	/****************************************************************************************\
 	|	private void serverRebind(String, ServerController)
@@ -246,14 +252,14 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 				//controllo se contiene il TAG
 				if(serverNamesList[i].contains(RMITAG + "/"))
 				{
-					String server2connect = rmitag2name(RMITAG, serverNamesList[i]); 	//recupero il nome del server a cui voglio connettermi
-					if(server2connect.equals(model.getServerName()))continue;		//evito di connettermi a me stesso :) 
+					String server2connect = rmitag2name(RMITAG, serverNamesList[i]); 		//recupero il nome del server a cui voglio connettermi
+					if(server2connect.equals(model.getServerName()))continue;				//evito di connettermi a me stesso :) 
 					int logPos = model.addLogText("connessione al server " + server2connect + "...");
 					try{
-						ref = serverLookup(server2connect);							//recupero il riferimento a tale server
-						if(ref.connectMEServer(model.getServerName())) 				//richiedo di connettermi al server
+						ref = serverLookup(server2connect);									//recupero il riferimento a tale server
+						if(ref.connectMEServer(model.getServerName(),model.getServerRef())) //richiedo di connettermi al server
 						{
-							model.addServer(server2connect,ref);					//aggiorno l'interfaccia grafica
+							model.addServer(server2connect,ref);							//aggiorno l'interfaccia grafica
 							model.addLogTextToLine(logPos," completata!");
 							serverConnessi++;;
 						}
@@ -350,11 +356,13 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 	}
 	
 	/****************************************************************************************\
-	|	public boolean connectMEServer(String _serverName)
+	|	public boolean connectMEServer(String _serverName, IServer _serverRef)
 	|	description: implementazione del metodo remoto dell'interfaccia IServer
 	\****************************************************************************************/
-	public boolean connectMEServer(String _serverName) throws RemoteException
+	public boolean connectMEServer(String _serverName, IServer _serverRef) throws RemoteException
 	{
+		boolean CONNECTED_STATUS = false;
+		
 		if(VERBOSE_LOG)
 			model.addLogText("[new server] il server " + _serverName + " richiede connessione!");
 			
@@ -363,29 +371,25 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 		{
 			if(VERBOSE_LOG)
 				model.addLogText("[new server] il server " + _serverName + " è già connesso!");
-			return false;
+			return true;
 		}
 		
-		IServer ref;
 		try{
-			ref = serverLookup(_serverName);
+			if(_serverRef.heartbeat().equals(HEARTBEAT_ANSWER))
+			{
+				synchronized(model)									//prendo il lock sui dati del model
+				{
+					model.addServer(_serverName,_serverRef);		//aggiungo un nuovo server				
+					model.addLogText("[new server] il server " + _serverName + " si è connesso!");
+					CONNECTED_STATUS = true;
+				}
+			}			
 		}catch(Exception e){
 			if(VERBOSE_LOG)
 				model.addLogText("[new server] impossibile contattare il server " + _serverName + "!");
-			ref = null;
 		}
 		
-		if(ref != null)
-		{
-			synchronized(model)	//prendo il lock sui dati del model
-			{
-				model.addServer(_serverName,ref);		//aggiungo un nuovo server				
-				model.addLogText("[new server] il server " + _serverName + " si è connesso!");
-			}
-			return true;
-		}else{
-			return false;
-		}
+		return CONNECTED_STATUS;
 	}
 	
 	/****************************************************************************************\
