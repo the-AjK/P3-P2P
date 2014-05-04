@@ -138,6 +138,48 @@ public class ClientModel extends java.util.Observable
 	}
 	
 	/****************************************************************************************\
+	|	public int getNdownloadQueue()
+	|	description: restituisce il numero di risorse in download
+	\****************************************************************************************/
+	public int getNdownloadQueue(){return downloadQueue.size();}
+	
+	
+	/****************************************************************************************\
+	|	public void removeResourceInDownload(int _n)
+	|	description: rimuove una risorsa in download
+	\****************************************************************************************/
+	public void removeResourceInDownload(int _n)
+	{
+		downloadQueue.remove(_n);
+	}
+	
+	/****************************************************************************************\
+	|	public int getResourceInDownload()
+	|	description: restituisce la risorsa in download
+	\****************************************************************************************/
+	public Resource getResourceInDownload(int _n)
+	{   
+		if(_n < downloadQueue.size())
+		{
+			return downloadQueue.get(_n).risorsa;
+		}
+		return null;
+	}
+	
+	/****************************************************************************************\
+	|	public Vector<DeviceClient> getDownloadClientListForResource
+	|	description: restituisce la lista di clients per la risorsa in download
+	\****************************************************************************************/
+	public Vector<DeviceClient> getDownloadClientListForResource(int _n)
+	{
+		if(_n < downloadQueue.size())
+		{
+			return downloadQueue.get(_n).listaClient;
+		}
+		return null;
+	}
+	
+	/****************************************************************************************\
 	|	public String getDownloadQueueText()
 	|	description: restituisce la lista di risorse in download in formato stringa per la GUI
 	\****************************************************************************************/

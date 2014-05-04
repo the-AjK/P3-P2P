@@ -33,6 +33,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 	
 	//impostazioni NON modificabili
 	private static final int CHECKCONNECTIONS_TIMEOUT = 3000;				//timeout per controllo connessione in background
+	private static final int CHECKDOWNLOADQUEUE_TIMEOUT = 2000;				//timeout per controllo coda download
 	private static final String RMITAG = "P3-P2P-JK"; 						//chiave identificativa per il registro RMI
 	private static final String CONNECT_BUTTON_TEXT    = "Connetti";		//testo del pulsante di disconnessione
 	private static final String DISCONNECT_BUTTON_TEXT = "Disconnetti";	
@@ -239,9 +240,48 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 	{
 		public void run()
 		{
-			
-			
-			
+			Resource risorsa;
+			Vector<DeviceClient> listaClient;
+			DeviceClient client;
+			while(true)
+			{
+				try{sleep(CHECKDOWNLOADQUEUE_TIMEOUT);}catch(InterruptedException ie){}
+				
+				//scorro la lista delle risorse in download per vedere se ci sono parti da scaricare
+				for(int i=0; i<model.getNdownloadQueue(); i++)
+				{
+					risorsa = model.getResourceInDownload(i); 				//prendo la risorsa
+					if(risorsa.isFull())
+					{
+						model.addLogText("[download_T] download risorsa " + risorsa.getName() + " " + risorsa.getNparts() + " terminato!");
+						//sposto la nuova risorsa completa sulla lista delle mie risorse
+						model.addResource(risorsa);
+						model.removeResourceInDownload(i);	//rimuovo la risorsa dalla coda download
+						
+						if(VERBOSE_LOG)
+							model.addLogText("[download_T] comunico nuova lista risorse al server " + model.getServer2Connect());
+						try{
+							IServer ref = (IServer) Naming.lookup("rmi://" + HOST + "/" + RMITAG + "/" + model.getServer2Connect());
+							ref.connectMEClient(model.getClientName(),model.getClientRef());
+						}catch(Exception e){
+							if(VERBOSE_LOG)
+								model.addLogText("[download_T] comunicazione nuova lista fallita!");
+						}						
+					}else{
+						//se la risorsa ha ancora parti da scaricare...
+						//prendo la lista di clients che possiedono tale risorsa
+						listaClient = model.getDownloadClientListForResource(i);
+						
+						
+						
+						
+						
+						
+						
+						
+					}					
+				}//end for			
+			}//end while(true)		
 		}//end run()
 		
 	}//class DownloadManagerThread

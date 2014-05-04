@@ -199,7 +199,7 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 	
 	/****************************************************************************************\
 	|	private String rmitag2name(String _rmitag, String _rmiString)
-	|	description: estra il nome del server che segue il TAG RMI nella stringa indicata
+	|	description: estrae il nome del server che segue il TAG RMI nella stringa indicata
 	\****************************************************************************************/
 	private String rmitag2name(String _rmitag, String _rmiString)
 	{
@@ -481,7 +481,7 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 		return model.getClientsOwnResourceList(_risorsa);
 		
 	}
-
+ 
 	/****************************************************************************************\
 	|	public Vector<DeviceClient> findResourceForClient(String _clientName, Resource _risorsa) 
 	|	description: implementazione del metodo remoto dell'interfaccia IServer
