@@ -32,4 +32,10 @@ public interface IClient extends Remote
 	\****************************************************************************************/
 	public Vector<Resource> getResourceList() throws RemoteException;
 	
+	/****************************************************************************************\
+	|	public boolean download(Resource _risorsa, int _parte, String _client) 
+	|	description: utilizzato dai client per richiedere una parte di risorsa
+	\****************************************************************************************/
+	public boolean download(Resource _risorsa, int _parte, String _client) throws RemoteException;
+	
 } //IClient

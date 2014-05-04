@@ -22,23 +22,29 @@ import common.Resource;
 import common.DeviceClient;
 import server.IServer;
 import java.io.Serializable;
+import java.util.Random;
 
 public class ClientController extends UnicastRemoteObject implements IClient, ActionListener, WindowListener, Serializable
 {
 	//impostazioni modificabili
 	private static final String HOST = "localhost:1099";					//host per la connessione RMI
-	private static final int DOWNLOAD_TIMEOUT = 3000;						//tempo per simulare il download di una parte di risorsa
+	private static final int DOWNLOAD_TIMEOUT = 5000;						//tempo per simulare il download di una parte di risorsa
 	private static final boolean VERBOSE_LOG = true;						//se true visualizza più messaggi di log
 	
 	
 	//impostazioni NON modificabili
 	private static final int CHECKCONNECTIONS_TIMEOUT = 3000;				//timeout per controllo connessione in background
 	private static final int CHECKDOWNLOADQUEUE_TIMEOUT = 2000;				//timeout per controllo coda download
+	private static final boolean RESOURCE_EMPTY = false;					//risorsa vuota
+	private static final boolean RESOURCE_FULL = true;						//risorsa completa
 	private static final String RMITAG = "P3-P2P-JK"; 						//chiave identificativa per il registro RMI
 	private static final String CONNECT_BUTTON_TEXT    = "Connetti";		//testo del pulsante di disconnessione
 	private static final String DISCONNECT_BUTTON_TEXT = "Disconnetti";	
 	private static final String CONNECTION_BUTTON_TEXT = "in connessione...";
 	private static final String FIND_BUTTON_TEXT = "Cerca e Scarica";
+	
+	//gestione numero random per il thread download
+	private Random rand;
 
 	//riferimenti alle componenti View e Model
 	private ClientView view;
@@ -56,6 +62,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 	{
 		checkConnections = new CheckConnectionsThread();
 		downloadManager = new DownloadManagerThread();
+		rand = new Random();
 	}
 	
 	/****************************************************************************************\
@@ -197,7 +204,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 		
 		public RicercaRisorseThread(String _nomeRisorsa, int _partiRisorsa)
 		{
-			risorsaDaCercare = new Resource(_nomeRisorsa, _partiRisorsa, false);
+			risorsaDaCercare = new Resource(_nomeRisorsa, _partiRisorsa, RESOURCE_EMPTY);
 			listaClient = new Vector<DeviceClient>(); //lista di clients che hanno la risorsa 
 		}
 		
@@ -238,6 +245,15 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 	\****************************************************************************************/
 	private class DownloadManagerThread extends Thread
 	{
+		private int activeDownloads;				//numero di download attivi
+		private Vector<DeviceClient> activeClients;	//lista di clients attivi (in upload)
+		
+		public DownloadManagerThread()
+		{
+			activeDownloads = 0;
+			activeClients = new Vector<DeviceClient>();
+		}
+		
 		public void run()
 		{
 			Resource risorsa;
@@ -271,20 +287,86 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 						//se la risorsa ha ancora parti da scaricare...
 						//prendo la lista di clients che possiedono tale risorsa
 						listaClient = model.getDownloadClientListForResource(i);
-						
-						
-						
-						
-						
-						
-						
-						
+						int parte;
+						int clientPos;
+						while(activeDownloads < model.getDownloadCapacity() ) 			//vedo se posso scaricare
+						{
+							do{
+								parte = randInt(0, risorsa.getNparts() - 1);			//prendo una parte random
+							}while(risorsa.isPartFull(parte));							//esco se la parte è vuota
+							risorsa.setPart(parte, RESOURCE_FULL);
+							
+							do{
+								clientPos = randInt(0, listaClient.size() - 1);
+								client = listaClient.get(clientPos);					//prendo un client random
+							}while(activeClients.contains(client));						//che non sia attivo 
+							
+							//avvio un thread di download per la parte di risorsa
+							(new DownloadResourcePartThread(risorsa, parte, listaClient, clientPos)).start();						
+						}						
 					}					
 				}//end for			
 			}//end while(true)		
 		}//end run()
 		
+		/****************************************************************************************\
+		|	private class DownloadResourcePartThread
+		|	description: thread che gestisce il download di una parte di risorsa
+		\****************************************************************************************/
+		private class DownloadResourcePartThread extends Thread
+		{
+			//campi dati
+			private Resource risorsa;
+			private int parte;
+			private DeviceClient client;
+			private Vector<DeviceClient> listaClient;
+			private int clientPos;
+			
+			public DownloadResourcePartThread(Resource _risorsa, int _parte, Vector<DeviceClient> _listaClient, int _clientPos)
+			{
+				risorsa = _risorsa;
+				parte = _parte;
+				listaClient = _listaClient;
+				clientPos = _clientPos;
+				client = listaClient.get(clientPos);
+			}
+			
+			public void run()
+			{
+				activeDownloads++;
+				activeClients.add(listaClient.get(clientPos));
+				model.addLogText("[download_T] avvio download " + risorsa.getName() + "." + parte + " dal client " + client.getName());
+				
+				try{sleep(DOWNLOAD_TIMEOUT);}catch(InterruptedException ie){}			//simulo il download
+				try{
+					if(client.getRef().download(risorsa, parte, model.getClientName()))	//richiedo il download
+					{
+						//risorsa.setPart(parte, RESOURCE_FULL);
+						model.addLogText("[download_T] download " + risorsa.getName() + "." + parte + " completato!");
+					}else{
+						model.addLogText("[download_T] download " + risorsa.getName() + "." + parte + " fallito!");
+					}
+					activeClients.remove(client);
+				}catch(Exception e){
+					model.addLogText("[download_T] richiesta download fallita!");
+					//il client non è raggiungibile, quindi lo elimino dalla lista client
+					activeClients.remove(client);
+					listaClient.remove(clientPos);
+				}		
+				activeDownloads--;
+			}//end run()
+		}
+		
 	}//class DownloadManagerThread
+	
+	/****************************************************************************************\
+	|	private int randInt(int _min, int _max)
+	|	description: restituisce un numero intero random compreso nel range indicato
+	\****************************************************************************************/
+	private int randInt(int _min, int _max)
+	{
+		return rand.nextInt((_max - _min) + 1) + _min;
+	}
 		
 	/****************************************************************************************\
 	|	public void windowDeiconified(WindowEvent _e)
@@ -536,8 +618,8 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 			}
 			if(partiRisorsa==0){continue;}					//risorse con zero parti non le considero
 			
-			//se la risorsa va bene, la aggiungo come piena (true)
-			model.addResource(new Resource(_R[i].toLowerCase(),partiRisorsa,true));
+			//se la risorsa va bene, la aggiungo come piena
+			model.addResource(new Resource(_R[i].toLowerCase(), partiRisorsa, RESOURCE_FULL));
 		}
 				
 		model.setLogColor(Color.RED);
@@ -567,6 +649,16 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 		{
 			return model.getResourceList();		
 		}
+	}
+	
+	/****************************************************************************************\
+	|	public boolean download(Resource _risorsa, int _parte, String _client)
+	|	description: implementazione del metodo remoto dell'interfaccia IClient
+	\****************************************************************************************/
+	public boolean download(Resource _risorsa, int _parte, String _client) throws RemoteException
+	{
+		model.addLogText("[upload] invio " + _risorsa.getName() + "." + _parte + " al client " + _client + " completato!");
+		return true;
 	}
 
 }//end class ClientController()
