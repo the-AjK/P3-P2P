@@ -17,14 +17,23 @@ import java.io.*;
 
 public class Resource implements Serializable
 {
+	private static final boolean PART_HEADER_FULL = true;	
+	private static final boolean PART_HEADER_EMPTY = false;	
+	private static final int PART_BODY_FULL = 22;	
+	private static final int PART_BODY_EMPTY = 0;	
+	
 	private class ResourcePart implements Serializable
-	{
-		public boolean part;						//contenuto informativo della parte di risorsa
+	{												//contenuto informativo della parte di risorsa
+		public boolean file_header;					//l'header viene scritto ad inizio download
+		public int file_body;						//per poi finire con la scrittura del body che indica il download completo
+		
 		public Vector<DeviceClient> logDownload;	//ogni parte di risorsa ha un log download che indica
 													//quanti e quali clients l'hanno scaricata
-		public ResourcePart(boolean _part)			
+													
+		public ResourcePart(boolean _file_header, int _file_body)			
 		{
-			part = _part;
+			file_header = _file_header;
+			file_body = _file_body;
 			logDownload = new Vector<DeviceClient>();
 		}
 	}
@@ -37,13 +46,18 @@ public class Resource implements Serializable
 	|	public Resource(String _nomeRisorsa, int _nparti, boolean _initValue)
 	|	description: costruttore
 	\****************************************************************************************/
-	public Resource(String _nomeRisorsa, int _nparti, boolean _initValue)
+	public Resource(String _nomeRisorsa, int _nparti, boolean _fullResource)
 	{
 		nomeRisorsa = _nomeRisorsa;
 		partiRisorsa = new Vector<ResourcePart>();
 		for(int i=0; i<_nparti; i++)
 		{
-			partiRisorsa.add(new ResourcePart(_initValue));
+			if(_fullResource)
+			{
+				partiRisorsa.add(new ResourcePart(PART_HEADER_FULL, PART_BODY_FULL));
+			}else{
+				partiRisorsa.add(new ResourcePart(PART_HEADER_EMPTY, PART_BODY_EMPTY));
+			}
 		}
 	}
 	
@@ -67,9 +81,12 @@ public class Resource implements Serializable
 	{
 		int trueCounter = 0;
 		for(int i=0; i<partiRisorsa.size(); i++)
-			if(partiRisorsa.get(i).part)trueCounter++;
+		{
+			if(partiRisorsa.get(i).file_header == PART_HEADER_FULL)trueCounter++;
+			if(partiRisorsa.get(i).file_body == PART_BODY_FULL)trueCounter++;
+		}
 	
-		return trueCounter == partiRisorsa.size();
+		return trueCounter == (partiRisorsa.size() * 2);
 	}	
 	
 	/****************************************************************************************\
@@ -78,11 +95,14 @@ public class Resource implements Serializable
 	\****************************************************************************************/
 	public boolean isEmpty()
 	{
-		int falseCounter = 0;
+		int trueCounter = 0;
 		for(int i=0; i<partiRisorsa.size(); i++)
-			if(partiRisorsa.get(i).part == false)falseCounter++;
+		{
+			if(partiRisorsa.get(i).file_header == PART_HEADER_EMPTY)trueCounter++;
+			if(partiRisorsa.get(i).file_body == PART_BODY_EMPTY)trueCounter++;
+		}
 	
-		return falseCounter == partiRisorsa.size();
+		return trueCounter == (partiRisorsa.size() * 2);
 	}
 	
 	/****************************************************************************************\
@@ -91,11 +111,8 @@ public class Resource implements Serializable
 	\****************************************************************************************/
 	public boolean isPartEmpty(int _part)
 	{
-		if(_part < partiRisorsa.size())
-		{
-			return partiRisorsa.get(_part).part == false;
-		}
-		return false;
+		return (partiRisorsa.get(_part).file_header == PART_HEADER_EMPTY) &&
+			   (partiRisorsa.get(_part).file_body == PART_BODY_EMPTY);
 	}
 	
 	/****************************************************************************************\
@@ -104,37 +121,86 @@ public class Resource implements Serializable
 	\****************************************************************************************/
 	public boolean isPartFull(int _part)
 	{
-		if(_part < partiRisorsa.size())
-		{
-			return partiRisorsa.get(_part).part == true;
-		}
-		return false;
+		return (partiRisorsa.get(_part).file_header == PART_HEADER_FULL) &&
+			   (partiRisorsa.get(_part).file_body == PART_BODY_FULL);
+	}
+	
+	/****************************************************************************************\
+	|	public boolean isPartInDownload(int _part)
+	|	description: restituisce true se la parte di risorsa indicata e' in download
+	\****************************************************************************************/
+	public boolean isPartInDownload(int _part)
+	{
+		return ((partiRisorsa.get(_part).file_header == PART_HEADER_EMPTY) &&
+			   (partiRisorsa.get(_part).file_body == PART_BODY_FULL)) ||
+			   ((partiRisorsa.get(_part).file_header == PART_HEADER_FULL) &&
+			   (partiRisorsa.get(_part).file_body == PART_BODY_EMPTY));
 	}
 	
 	/****************************************************************************************\
 	|	public boolean getPart(int _n)
-	|	description: restituisce la parte della risorsa indicata
+	|	description: restituisce l'header della parte della risorsa indicata
 	\****************************************************************************************/
-	public boolean getPart(int _n)
+	public boolean getPartHeader(int _n)
 	{
-		if(_n < partiRisorsa.size())
-		{
-			return partiRisorsa.get(_n).part;
-		}else{
-			return false;
-		}	
+		return partiRisorsa.get(_n).file_header;
 	}
 	
 	/****************************************************************************************\
-	|	public void setPart(int _n, boolean _value)
-	|	description: setta la parte di risorsa indicata con un determinato valore (_value)
+	|	public int getPart(int _n)
+	|	description: restituisce il body della parte della risorsa indicata
 	\****************************************************************************************/
-	public void setPart(int _n, boolean _value)
+	public int getPartBody(int _n)
 	{
-		if(_n < partiRisorsa.size())
-		{
-			partiRisorsa.get(_n).part = _value;
-		}
+		return partiRisorsa.get(_n).file_body;
+	}
+	
+	/****************************************************************************************\
+	|	public void setPartHeader(int _n, boolean _value)
+	|	description: setta l'header della parte di risorsa indicata con un determinato valore (_value)
+	\****************************************************************************************/
+	public void setPartHeader(int _n, boolean _value)
+	{
+		partiRisorsa.get(_n).file_header = _value;
+	}
+	
+	/****************************************************************************************\
+	|	public void setPartBody(int _n, int _value)
+	|	description: setta il body della parte di risorsa indicata con un determinato valore (_value)
+	\****************************************************************************************/
+	public void setPartBody(int _n, int _value)
+	{
+		partiRisorsa.get(_n).file_body = _value;
+	}
+	
+	/****************************************************************************************\
+	|	public void setPartInDownload(int _n)
+	|	description: setta la parte di risorsa indicata come in download
+	\****************************************************************************************/
+	public void setPartInDownload(int _n)
+	{
+		partiRisorsa.get(_n).file_header = PART_HEADER_FULL;
+		partiRisorsa.get(_n).file_body = PART_BODY_EMPTY;
+	}
+	
+	/****************************************************************************************\
+	|	public void setPartFull(int _n)
+	|	description: setta la parte di risorsa indicata come piena
+	\****************************************************************************************/
+	public void setPartFull(int _n)
+	{
+		partiRisorsa.get(_n).file_header = PART_HEADER_FULL;
+		partiRisorsa.get(_n).file_body = PART_BODY_FULL;
+	}
+	
+	/****************************************************************************************\
+	|	public void setPartEmpty(int _n)
+	|	description: setta la parte di risorsa indicata come vuota
+	\****************************************************************************************/
+	public void setPartEmpty(int _n)
+	{
+		partiRisorsa.get(_n).file_header = PART_HEADER_EMPTY;
+		partiRisorsa.get(_n).file_body = PART_BODY_EMPTY;
 	}
 
 } //end class Resource
