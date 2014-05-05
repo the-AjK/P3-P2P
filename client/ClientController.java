@@ -103,42 +103,65 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 			String[] animIcon = {"PSP","P2P"};
 			model.addLogText("[check_T] connessione automatica avviata...");
 			model.setDisconnectBtext(CONNECTION_BUTTON_TEXT);				
-							
-			while(true)
-			{
-				//animazione durante l'attesa, lampeggio veloce del titolo
-				for(int i=0; i<animIcon.length; i++)
-				{
-					try{sleep(100);}catch(InterruptedException ie){}					
-					model.setAnimIcon(animIcon[i]);							
-				}
-				try{sleep(CHECKCONNECTIONS_TIMEOUT);}catch(InterruptedException ie){}	
 				
-				//controllo lo stato del server e di conseguenza anche del registro RMI
-				try{
-					ref = (IServer) Naming.lookup("rmi://" + HOST + "/" + RMITAG + "/" + model.getServer2Connect());
-					if(!RMI_OK || FIRST_TIME) 
+			try{
+				while( !Thread.currentThread().isInterrupted() )
+				{
+					//animazione durante l'attesa, lampeggio veloce del titolo
+					for(int i=0; i<animIcon.length; i++)
 					{
-						model.addLogText("[check_T] connessione RMI disponibile.");
-						model.setDisconnectBtext(CONNECT_BUTTON_TEXT);		//permetto la connessione
-						model.setDisconnectBenabled(true);					
-						RMI_OK = true;
+						sleep(100);				
+						model.setAnimIcon(animIcon[i]);							
 					}
+					sleep(CHECKCONNECTIONS_TIMEOUT);
 					
-					//RMI ok ed anche il server e' iscritto, ma controlliamo se risponde all'heartbeat!
+					//controllo lo stato del server e di conseguenza anche del registro RMI
 					try{
-						if(ref.heartbeat().equals(IServer.HEARTBEAT_ANSWER))
+						ref = (IServer) Naming.lookup("rmi://" + HOST + "/" + RMITAG + "/" + model.getServer2Connect());
+						if(!RMI_OK || FIRST_TIME) 
 						{
-							if(!SERVER_OK || FIRST_TIME)
+							model.addLogText("[check_T] connessione RMI disponibile.");
+							model.setDisconnectBtext(CONNECT_BUTTON_TEXT);		//permetto la connessione
+							model.setDisconnectBenabled(true);					
+							RMI_OK = true;
+						}
+						
+						//RMI ok ed anche il server e' iscritto, ma controlliamo se risponde all'heartbeat!
+						try{
+							if(ref.heartbeat().equals(IServer.HEARTBEAT_ANSWER))
 							{
-								model.addLogText("[check_T] il server " + model.getServer2Connect() + " e' online!");
-								SERVER_OK = connectToServer();				//mi connetto al server in automatico
+								if(!SERVER_OK || FIRST_TIME)
+								{
+									model.addLogText("[check_T] il server " + model.getServer2Connect() + " e' online!");
+									SERVER_OK = connectToServer();				//mi connetto al server in automatico
+								}
+							}
+						}catch(Exception ee){
+							if(SERVER_OK || FIRST_TIME)
+							{
+								model.setLogColor(Color.RED); 
+								model.addLogText("[check_T] il server " + model.getServer2Connect() + " e' offline.");
+								if(model.getDisconnectBtext().equals(DISCONNECT_BUTTON_TEXT) ||  //se ero connesso
+								   model.getDisconnectBtext().equals(CONNECTION_BUTTON_TEXT) )	 //oppure in fase di connessione
+									model.addLogText("[check_T] connessione al server " + model.getServer2Connect() + " terminata!");
+								model.setDisconnectBtext(CONNECT_BUTTON_TEXT);		//permetto la connessione
+								model.setDisconnectBenabled(true);
+								model.setFindBenabled(false);						//disabilito la ricerca
+								SERVER_OK = false; 
 							}
 						}
-					}catch(Exception ee){
+						
+					}catch(NotBoundException e){ 								//non ho trovato il server nel registro RMI
+						model.setLogColor(Color.RED); 							//segnalo l'errore con caratteri rossi
+						if(!RMI_OK || FIRST_TIME) 
+						{
+							model.addLogText("[check_T] connessione RMI OK.");
+							model.setDisconnectBtext(CONNECT_BUTTON_TEXT);		//permetto la connessione
+							model.setDisconnectBenabled(true);
+							RMI_OK = true;
+						}
 						if(SERVER_OK || FIRST_TIME)
 						{
-							model.setLogColor(Color.RED); 
 							model.addLogText("[check_T] il server " + model.getServer2Connect() + " e' offline.");
 							if(model.getDisconnectBtext().equals(DISCONNECT_BUTTON_TEXT) ||  //se ero connesso
 							   model.getDisconnectBtext().equals(CONNECTION_BUTTON_TEXT) )	 //oppure in fase di connessione
@@ -148,48 +171,34 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 							model.setFindBenabled(false);						//disabilito la ricerca
 							SERVER_OK = false; 
 						}
-					}
-					
-				}catch(NotBoundException e){ 								//non ho trovato il server nel registro RMI
-					model.setLogColor(Color.RED); 							//segnalo l'errore con caratteri rossi
-					if(!RMI_OK || FIRST_TIME) 
-					{
-						model.addLogText("[check_T] connessione RMI OK.");
-						model.setDisconnectBtext(CONNECT_BUTTON_TEXT);		//permetto la connessione
-						model.setDisconnectBenabled(true);
-						RMI_OK = true;
-					}
-					if(SERVER_OK || FIRST_TIME)
-					{
-						model.addLogText("[check_T] il server " + model.getServer2Connect() + " e' offline.");
-						if(model.getDisconnectBtext().equals(DISCONNECT_BUTTON_TEXT) ||  //se ero connesso
-						   model.getDisconnectBtext().equals(CONNECTION_BUTTON_TEXT) )	 //oppure in fase di connessione
-							model.addLogText("[check_T] connessione al server " + model.getServer2Connect() + " terminata!");
-						model.setDisconnectBtext(CONNECT_BUTTON_TEXT);		//permetto la connessione
-						model.setDisconnectBenabled(true);
-						model.setFindBenabled(false);						//disabilito la ricerca
-						SERVER_OK = false; 
-					}
-				}catch(Exception e){ 										//registro RMI irreperibile
-					model.setLogColor(Color.RED); 							//segnalo l'errore con caratteri rossi
-					if(RMI_OK || FIRST_TIME)
-					{
-						model.addLogText("[check_T] connessione RMI non riuscita.");
-						if(model.getDisconnectBtext().equals(DISCONNECT_BUTTON_TEXT) ||  //se ero connesso
-						   model.getDisconnectBtext().equals(CONNECTION_BUTTON_TEXT) )	 //oppure in fase di connessione
-							model.addLogText("[check_T] connessione al server " + model.getServer2Connect() + " terminata!");
-						model.setDisconnectBtext(CONNECT_BUTTON_TEXT);		//permetto la connessione
-						model.setDisconnectBenabled(true);
-						model.setFindBenabled(false);						//disabilito la ricerca
-						SERVER_OK = false; 
-						RMI_OK = false;							
-					}
-				}	
+					}catch(Exception e){ 										//registro RMI irreperibile
+						model.setLogColor(Color.RED); 							//segnalo l'errore con caratteri rossi
+						if(RMI_OK || FIRST_TIME)
+						{
+							model.addLogText("[check_T] connessione RMI non riuscita.");
+							if(model.getDisconnectBtext().equals(DISCONNECT_BUTTON_TEXT) ||  //se ero connesso
+							   model.getDisconnectBtext().equals(CONNECTION_BUTTON_TEXT) )	 //oppure in fase di connessione
+								model.addLogText("[check_T] connessione al server " + model.getServer2Connect() + " terminata!");
+							model.setDisconnectBtext(CONNECT_BUTTON_TEXT);		//permetto la connessione
+							model.setDisconnectBenabled(true);
+							model.setFindBenabled(false);						//disabilito la ricerca
+							SERVER_OK = false; 
+							RMI_OK = false;							
+						}
+					}	
 
-				if(FIRST_TIME)FIRST_TIME = false; //non e' piu' la prima volta :(
-				
-			}//end while(1)			
+					if(FIRST_TIME)FIRST_TIME = false; //non e' piu' la prima volta :(
+					
+				}//end while( !Thread.currentThread().isInterrupted() )	
+			}catch(InterruptedException ie){
+				model.addLogText("[check_T] interrupted exception!");
+			}
+			finally{
+				//non dovrebbe mai terminare, quindi se succede lo segnalo
+				model.addLogText("[check_T] thread controllo connessioni terminato in modo imprevisto!");
+			}			
 		}//end run()
+		
 	}//class CheckConnectionsThread
 	
 	/****************************************************************************************\
@@ -232,7 +241,6 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 					model.addLogText("[ricerca_T] risorsa " + risorsaDaCercare.getName() + " " + risorsaDaCercare.getNparts() + " non trovata!");
 				}
 			}catch(Exception e){
-				e.printStackTrace();
 				model.addLogText("[ricerca_T] impossibile comunicare con il server!");
 			}							
 		}//end run()
@@ -259,54 +267,64 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 			Resource risorsa;
 			Vector<DeviceClient> listaClient;
 			DeviceClient client;
-			while(true)
-			{
-				try{sleep(CHECKDOWNLOADQUEUE_TIMEOUT);}catch(InterruptedException ie){}
-				
-				//scorro la lista delle risorse in download per vedere se ci sono parti da scaricare
-				for(int i=0; i<model.getNdownloadQueue(); i++)
+			
+			try{
+				while( !Thread.currentThread().isInterrupted() )
 				{
-					risorsa = model.getResourceInDownload(i); 				//prendo la risorsa
-					if(risorsa.isFull())
+				
+					sleep(CHECKDOWNLOADQUEUE_TIMEOUT);
+					
+					//scorro la lista delle risorse in download per vedere se ci sono parti da scaricare
+					for(int i=0; i<model.getNdownloadQueue(); i++)
 					{
-						model.addLogText("[download_T] download risorsa " + risorsa.getName() + " " + risorsa.getNparts() + " terminato!");
-						//sposto la nuova risorsa completa sulla lista delle mie risorse
-						model.addResource(risorsa);
-						model.removeResourceInDownload(i);	//rimuovo la risorsa dalla coda download
-						
-						if(VERBOSE_LOG)
-							model.addLogText("[download_T] comunico nuova lista risorse al server " + model.getServer2Connect());
-						try{
-							IServer ref = (IServer) Naming.lookup("rmi://" + HOST + "/" + RMITAG + "/" + model.getServer2Connect());
-							ref.connectMEClient(model.getClientName(),model.getClientRef());
-						}catch(Exception e){
-							if(VERBOSE_LOG)
-								model.addLogText("[download_T] comunicazione nuova lista fallita!");
-						}						
-					}else{
-						//se la risorsa ha ancora parti da scaricare...
-						//prendo la lista di clients che possiedono tale risorsa
-						listaClient = model.getDownloadClientListForResource(i);
-						int parte;
-						int clientPos;
-						while(activeDownloads < model.getDownloadCapacity() ) 			//vedo se posso scaricare
+						risorsa = model.getResourceInDownload(i); 				//prendo la risorsa
+						if(risorsa.isFull())
 						{
-							do{
-								parte = randInt(0, risorsa.getNparts() - 1);			//prendo una parte random
-							}while(risorsa.isPartFull(parte));							//esco se la parte e' vuota
-							risorsa.setPart(parte, RESOURCE_FULL);
+							model.addLogText("[download_T] download risorsa " + risorsa.getName() + " " + risorsa.getNparts() + " terminato!");
+							//sposto la nuova risorsa completa sulla lista delle mie risorse
+							model.addResource(risorsa);
+							model.removeResourceInDownload(i);	//rimuovo la risorsa dalla coda download
 							
-							do{
-								clientPos = randInt(0, listaClient.size() - 1);
-								client = listaClient.get(clientPos);					//prendo un client random
-							}while(activeClients.contains(client));						//che non sia attivo 
-							
-							//avvio un thread di download per la parte di risorsa
-							(new DownloadResourcePartThread(risorsa, parte, listaClient, clientPos)).start();						
-						}						
-					}					
-				}//end for			
-			}//end while(true)		
+							if(VERBOSE_LOG)
+								model.addLogText("[download_T] comunico nuova lista risorse al server " + model.getServer2Connect());
+							try{
+								IServer ref = (IServer) Naming.lookup("rmi://" + HOST + "/" + RMITAG + "/" + model.getServer2Connect());
+								ref.connectMEClient(model.getClientName(),model.getClientRef());
+							}catch(Exception e){
+								if(VERBOSE_LOG)
+									model.addLogText("[download_T] comunicazione nuova lista fallita!");
+							}						
+						}else{
+							//se la risorsa ha ancora parti da scaricare...
+							//prendo la lista di clients che possiedono tale risorsa
+							listaClient = model.getDownloadClientListForResource(i);
+							int parte;
+							int clientPos;
+							while(activeDownloads < model.getDownloadCapacity() ) 			//vedo se posso scaricare
+							{
+								do{
+									parte = randInt(0, risorsa.getNparts() - 1);			//prendo una parte random
+								}while(risorsa.isPartFull(parte));							//esco se la parte e' vuota
+								risorsa.setPart(parte, RESOURCE_FULL);
+								
+								do{
+									clientPos = randInt(0, listaClient.size() - 1);
+									client = listaClient.get(clientPos);					//prendo un client random
+								}while(activeClients.contains(client));						//che non sia attivo 
+								
+								//avvio un thread di download per la parte di risorsa
+								(new DownloadResourcePartThread(risorsa, parte, listaClient, clientPos)).start();						
+							}						
+						}					
+					}//end for			
+				}//end while( !Thread.currentThread().isInterrupted() )	
+			}catch(InterruptedException ie){
+				model.addLogText("[download_T] interrupted exception!");
+			}
+			finally{
+				//non dovrebbe mai terminare, quindi se succede lo segnalo
+				model.addLogText("[download_T] thread gestione download terminato in modo imprevisto!");
+			}				
 		}//end run()
 		
 		/****************************************************************************************\
@@ -333,27 +351,35 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 			
 			public void run()
 			{
-				activeDownloads++;
-				activeClients.add(listaClient.get(clientPos));
-				model.addLogText("[download_T] avvio download " + risorsa.getName() + "." + parte + " dal client " + client.getName());
-				
-				try{sleep(DOWNLOAD_TIMEOUT);}catch(InterruptedException ie){}			//simulo il download
 				try{
-					if(client.getRef().download(risorsa, parte, model.getClientName()))	//richiedo il download
-					{
-						//risorsa.setPart(parte, RESOURCE_FULL);
-						model.addLogText("[download_T] download " + risorsa.getName() + "." + parte + " completato!");
-					}else{
-						model.addLogText("[download_T] download " + risorsa.getName() + "." + parte + " fallito!");
-					}
-					activeClients.remove(client);
-				}catch(Exception e){
-					model.addLogText("[download_T] richiesta download fallita!");
-					//il client non e' raggiungibile, quindi lo elimino dalla lista client
-					activeClients.remove(client);
-					listaClient.remove(clientPos);
-				}		
-				activeDownloads--;
+					activeDownloads++;
+					activeClients.add(listaClient.get(clientPos));
+					model.addLogText("[downloadP_T] avvio download " + risorsa.getName() + "." + parte + " dal client " + client.getName());
+					
+					sleep(DOWNLOAD_TIMEOUT);	//simulo il download
+					try{
+						if(client.getRef().download(risorsa, parte, model.getClientName()))	//richiedo il download
+						{
+							//risorsa.setPart(parte, RESOURCE_FULL);
+							model.addLogText("[downloadP_T] download " + risorsa.getName() + "." + parte + " completato!");
+						}else{
+							model.addLogText("[downloadP_T] download " + risorsa.getName() + "." + parte + " fallito!");
+						}
+						activeClients.remove(client);
+					}catch(Exception e){
+						model.addLogText("[downloadP_T] richiesta download fallita!");
+						//il client non e' raggiungibile, quindi lo elimino dalla lista client
+						risorsa.setPart(parte, RESOURCE_EMPTY);	//reimposto la risorsa come vuota
+						activeClients.remove(client);
+						listaClient.remove(clientPos);
+					}		
+					activeDownloads--;					
+				}catch(InterruptedException ie){
+					model.addLogText("[downloadP_T] interrupted exception!");
+				}
+				finally{
+					model.addLogText("[downloadP_T] thread download parte risorsa terminato!");
+				}
 			}//end run()
 		}
 		
@@ -603,9 +629,16 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 		model.setClientRef(this);
 		model.setServer2Connect(_server2connect);
 		model.setDownloadCapacity(_D);
+		model.setLogColor(Color.RED);
+		model.setDisconnectBtext(CONNECT_BUTTON_TEXT);
+		model.setDisconnectBenabled(false);
+		model.setFindBenabled(false);
+		model.addLogText("[Client " + _nomeClient + "] Log di sistema:");
 
 		//carico le risorse
+		model.addLogText("controllo risorse locali...");		
 		int partiRisorsa;
+		Resource nuovaRisorsa;
 		for(int i=0; i<_R.length; i+=2)
 		{
 			try
@@ -617,15 +650,17 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 			}
 			if(partiRisorsa==0){continue;}					//risorse con zero parti non le considero
 			
-			//se la risorsa va bene, la aggiungo come piena
-			model.addResource(new Resource(_R[i].toLowerCase(), partiRisorsa, RESOURCE_FULL));
+			//se la risorsa va bene e non e' gia' presente, la aggiungo come piena
+			nuovaRisorsa = new Resource(_R[i].toLowerCase(), partiRisorsa, RESOURCE_FULL);
+			
+			if(!model.resourceIsHere(_R[i].toLowerCase(),partiRisorsa))
+			{
+				model.addResource(nuovaRisorsa);
+			}else{
+				model.addLogText("impossibile inserire risorse uguali!");
+				model.addLogText("inserita una sola occorrenza di " + nuovaRisorsa.getName() + " " + nuovaRisorsa.getNparts() + ".");
+			}
 		}
-				
-		model.setLogColor(Color.RED);
-		model.setDisconnectBtext(CONNECT_BUTTON_TEXT);
-		model.setDisconnectBenabled(false);
-		model.setFindBenabled(false);
-		model.addLogText("[Client " + _nomeClient + "] Log di sistema:");
 		
 	}
 	

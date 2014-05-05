@@ -86,64 +86,71 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 		public void run()
 		{
 			String[] animIcon = {"PSP","P2P"};
-			while(true)
-			{
-				//animazione durante l'attesa, lampeggio veloce del titolo
-				for(int i=0; i<animIcon.length; i++)
+			try{
+				while( !Thread.currentThread().isInterrupted() )
 				{
-					try{sleep(100);}catch(InterruptedException ie){}					
-					model.setAnimIcon(animIcon[i]);							
-				}
-				try{sleep(CHECKCONNECTIONS_TIMEOUT);}catch(InterruptedException ie){}	
-									
-				//Controllo la presenza dell'RMI registry
-				try{
-					Naming.list("//" + HOST );
-				}
-				catch(Exception e)
-				{
-					model.setLogColor(Color.RED);
-					model.addLogText("[check_T] FATAL ERROR! connessione RMI non riuscita.");
-					autoShutdown(AUTO_SHUTDOWN_TIMEOUT);
-				}
-				
-				//controllo i server connessi alla ricerca di server morti :)
-				synchronized(model)	//prendo il lock sui dati del model
-				{
-					//ora controllo che tutta la mia lista server a cui sono connesso 
-					//siano ancora online
-					for(int i=0; i<model.getNservers(); i++)
+					//animazione durante l'attesa, lampeggio veloce del titolo
+					for(int i=0; i<animIcon.length; i++)
 					{
-						try{
-							if(model.getServer(i).getRef().heartbeat().equals(IServer.HEARTBEAT_ANSWER)) //controllo se il server e' vivo
-							{
-							
-							}
-						}catch(Exception e){
-							model.addLogText("[check_T] il server " + model.getServer(i).getName() + " e' offline.");
-							model.removeServer(model.getServer(i).getName());
-						}		
-					}					
-				}//end synchronized(model)
-				
-				//controllo i clients connessi alla ricerca di clients morti :)
-				synchronized(model)	//prendo il lock sui dati del model
-				{
-					for(int i=0; i<model.getNclients(); i++)
+						sleep(100);					
+						model.setAnimIcon(animIcon[i]);							
+					}
+					sleep(CHECKCONNECTIONS_TIMEOUT);
+										
+					//Controllo la presenza dell'RMI registry
+					try{
+						Naming.list("//" + HOST );
+					}
+					catch(Exception e)
 					{
-						try{
-							if(model.getClient(i).getRef().heartbeat().equals(IClient.HEARTBEAT_ANSWER)) //controllo se il client e' vivo
-							{
-							
-							}
-						}catch(Exception e){
-							model.addLogText("[check_T] il client " + model.getClient(i).getName() + " e' offline.");
-							model.removeClient(model.getClient(i).getName());
-						}		
-					}					
-				}//end synchronized(model)				
-			
-			}//end while(1)
+						model.setLogColor(Color.RED);
+						model.addLogText("[check_T] FATAL ERROR! connessione RMI non riuscita.");
+						autoShutdown(AUTO_SHUTDOWN_TIMEOUT);
+					}
+					
+					//controllo i server connessi alla ricerca di server morti :)
+					synchronized(model)	//prendo il lock sui dati del model
+					{
+						//ora controllo che tutta la mia lista server a cui sono connesso 
+						//siano ancora online
+						for(int i=0; i<model.getNservers(); i++)
+						{
+							try{
+								if(model.getServer(i).getRef().heartbeat().equals(IServer.HEARTBEAT_ANSWER)) //controllo se il server e' vivo
+								{
+								
+								}
+							}catch(Exception e){
+								model.addLogText("[check_T] il server " + model.getServer(i).getName() + " e' offline.");
+								model.removeServer(model.getServer(i).getName());
+							}		
+						}					
+					}//end synchronized(model)
+					
+					//controllo i clients connessi alla ricerca di clients morti :)
+					synchronized(model)	//prendo il lock sui dati del model
+					{
+						for(int i=0; i<model.getNclients(); i++)
+						{
+							try{
+								if(model.getClient(i).getRef().heartbeat().equals(IClient.HEARTBEAT_ANSWER)) //controllo se il client e' vivo
+								{
+								
+								}
+							}catch(Exception e){
+								model.addLogText("[check_T] il client " + model.getClient(i).getName() + " e' offline.");
+								model.removeClient(model.getClient(i).getName());
+							}		
+						}					
+					}//end synchronized(model)				
+				
+				}//end while( !Thread.currentThread().isInterrupted() )	
+			}catch(InterruptedException ie){
+				model.addLogText("[check_T] interrupted exception!");
+			}
+			finally{
+				model.addLogText("[check_T] thread controllo connessioni terminato in modo imprevisto!");
+			}
 		}// end run()
 
 	} //end CheckConnectionsThread

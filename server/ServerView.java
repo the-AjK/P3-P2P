@@ -37,7 +37,6 @@ public class ServerView implements java.util.Observer
 	{ 
 		//layout principale
 		frame = new JFrame("Server in avvio...");
-		//frame.setLayout(new GridLayout(2,1,10,5));
 		frame.setLayout(new BorderLayout());
 		
 		//creo pannello principale
