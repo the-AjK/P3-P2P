@@ -28,13 +28,13 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 {
 	//impostazioni modificabili
 	private static final String HOST = "localhost:1099";		//host per la connessione RMI
-	private static final boolean VERBOSE_LOG = true;			//se true visualizza più messaggi di log
+	private static final boolean VERBOSE_LOG = true;			//se true visualizza piu' messaggi di log
 	private static final int AUTO_SHUTDOWN_TIMEOUT = 22;		//timeout per l'auto spegnimento in caso di problemi con connessione RMI [s]
 	private static final int CHECKCONNECTIONS_TIMEOUT = 3000;	//controllo connessioni in background [ms]
 	
 	//impostazioni NON modificabili
 	private static final String RMITAG = "P3-P2P-JK"; 			//chiave identificativa dei server per il registro RMI	
-	private boolean autoShutdownActive = false;					//flag che indica se è attivo l'autoShutdown
+	private boolean autoShutdownActive = false;					//flag che indica se e' attivo l'autoShutdown
 			
 	//riferimenti alle componenti View e Model
 	private ServerView view;
@@ -60,7 +60,7 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 	{
 		//inizio le operazioni di avvio del server...
 		int logPos = model.addLogText("inizializzazione server...");		
-		serverRebind(model.getServerName(),this);		//pubblico il mio nome così i clients possono collegarsi
+		serverRebind(model.getServerName(),this);		//pubblico il mio nome cosi' i clients possono collegarsi
 		model.addLogTextToLine(logPos," completata!");
 		model.setLogColor(Color.BLUE);
 		connect2server();								//controllo i server online e mi connetto ad essi
@@ -115,12 +115,12 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 					for(int i=0; i<model.getNservers(); i++)
 					{
 						try{
-							if(model.getServer(i).getRef().heartbeat().equals(IServer.HEARTBEAT_ANSWER)) //controllo se il server è vivo
+							if(model.getServer(i).getRef().heartbeat().equals(IServer.HEARTBEAT_ANSWER)) //controllo se il server e' vivo
 							{
 							
 							}
 						}catch(Exception e){
-							model.addLogText("[check_T] il server " + model.getServer(i).getName() + " è offline.");
+							model.addLogText("[check_T] il server " + model.getServer(i).getName() + " e' offline.");
 							model.removeServer(model.getServer(i).getName());
 						}		
 					}					
@@ -132,12 +132,12 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 					for(int i=0; i<model.getNclients(); i++)
 					{
 						try{
-							if(model.getClient(i).getRef().heartbeat().equals(IClient.HEARTBEAT_ANSWER)) //controllo se il client è vivo
+							if(model.getClient(i).getRef().heartbeat().equals(IClient.HEARTBEAT_ANSWER)) //controllo se il client e' vivo
 							{
 							
 							}
 						}catch(Exception e){
-							model.addLogText("[check_T] il client " + model.getClient(i).getName() + " è offline.");
+							model.addLogText("[check_T] il client " + model.getClient(i).getName() + " e' offline.");
 							model.removeClient(model.getClient(i).getName());
 						}		
 					}					
@@ -366,11 +366,11 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 		if(VERBOSE_LOG)
 			model.addLogText("[new server] il server " + _serverName + " richiede connessione!");
 			
-		//controllo che non sia già connesso
+		//controllo che non sia gia' connesso
 		if(model.serverIsHere(_serverName))
 		{
 			if(VERBOSE_LOG)
-				model.addLogText("[new server] il server " + _serverName + " è già connesso!");
+				model.addLogText("[new server] il server " + _serverName + " e' gia' connesso!");
 			return true;
 		}
 		
@@ -380,7 +380,7 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 				synchronized(model)									//prendo il lock sui dati del model
 				{
 					model.addServer(_serverName,_serverRef);		//aggiungo un nuovo server				
-					model.addLogText("[new server] il server " + _serverName + " si è connesso!");
+					model.addLogText("[new server] il server " + _serverName + " si e' connesso!");
 					CONNECTED_STATUS = true;
 				}
 			}			
@@ -401,7 +401,7 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 		boolean NEW_CLIENT = true;
 		int logPos = 0;
 		
-		//se è già connesso significa che il client vuole inviarmi una nuova lista risorse
+		//se e' gia' connesso significa che il client vuole inviarmi una nuova lista risorse
 		if(model.clientIsHere(_clientName))
 		{
 			if(VERBOSE_LOG)
@@ -435,7 +435,7 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 				if(NEW_CLIENT)
 				{
 					model.addClient(_clientName,_clientRef,listaRisorse);	//aggiungo un nuovo client	
-					model.addLogText("[new client] il client " + _clientName + " si è connesso!");
+					model.addLogText("[new client] il client " + _clientName + " si e' connesso!");
 				}else{
 					model.addClientResourceList(_clientName,listaRisorse);		//aggiorno la lista risorse
 					model.addLogTextToLine(logPos," ok!");
@@ -455,13 +455,13 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 	\****************************************************************************************/
 	public boolean disconnectMEClient(String _clientName) throws RemoteException
 	{
-		//se il client non è connesso, non faccio nulla
+		//se il client non e' connesso, non faccio nulla
 		if(!model.clientIsHere(_clientName))return false;
 		
 		synchronized(model)	//prendo il lock sui dati del model
 		{
 			model.removeClient(_clientName);			//rimuovo il client			
-			model.addLogText("il client " + _clientName + " si è disconnesso!");
+			model.addLogText("il client " + _clientName + " si e' disconnesso!");
 		} 	
 		return true;
 	}
@@ -477,7 +477,7 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 		if(VERBOSE_LOG)
 			model.addLogText("il server " + _serverName + " richiede ricerca di " + _risorsa.getName() + " " + _risorsa.getNparts());
 		
-		//cerco tra i miei client locali se la risorsa è presente
+		//cerco tra i miei client locali se la risorsa e' presente
 		return model.getClientsOwnResourceList(_risorsa);
 		
 	}
@@ -493,7 +493,7 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 		if(VERBOSE_LOG)
 			model.addLogText("il client " + _clientName + " richiede ricerca di " + _risorsa.getName() + " " + _risorsa.getNparts());
 		
-		//cerco tra i miei client locali se la risorsa è presente
+		//cerco tra i miei client locali se la risorsa e' presente
 		Vector<DeviceClient> listaClient = model.getClientsOwnResourceList(_risorsa);
 		
 		//ora inoltro la richiesta a tutti i server a cui sono collegato

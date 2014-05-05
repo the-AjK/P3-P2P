@@ -61,7 +61,7 @@ public class Resource implements Serializable
 	
 	/****************************************************************************************\
 	|	public boolean isFull()
-	|	description: restituisce true se la risorsa è completa in tutte le sue parti
+	|	description: restituisce true se la risorsa e' completa in tutte le sue parti
 	\****************************************************************************************/
 	public boolean isFull()
 	{
@@ -87,7 +87,7 @@ public class Resource implements Serializable
 	
 	/****************************************************************************************\
 	|	public boolean isPartEmpty(int _part)
-	|	description: restituisce true se la parte di risorsa indicata è incompleta
+	|	description: restituisce true se la parte di risorsa indicata e' incompleta
 	\****************************************************************************************/
 	public boolean isPartEmpty(int _part)
 	{
@@ -100,7 +100,7 @@ public class Resource implements Serializable
 	
 	/****************************************************************************************\
 	|	public boolean isPartFull(int _part)
-	|	description: restituisce true se la parte di risorsa indicata è completa
+	|	description: restituisce true se la parte di risorsa indicata e' completa
 	\****************************************************************************************/
 	public boolean isPartFull(int _part)
 	{

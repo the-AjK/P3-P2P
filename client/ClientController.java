@@ -29,7 +29,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 	//impostazioni modificabili
 	private static final String HOST = "localhost:1099";					//host per la connessione RMI
 	private static final int DOWNLOAD_TIMEOUT = 5000;						//tempo per simulare il download di una parte di risorsa
-	private static final boolean VERBOSE_LOG = true;						//se true visualizza più messaggi di log
+	private static final boolean VERBOSE_LOG = true;						//se true visualizza piu' messaggi di log
 	
 	
 	//impostazioni NON modificabili
@@ -125,13 +125,13 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 						RMI_OK = true;
 					}
 					
-					//RMI ok ed anche il server è iscritto, ma controlliamo se risponde all'heartbeat!
+					//RMI ok ed anche il server e' iscritto, ma controlliamo se risponde all'heartbeat!
 					try{
 						if(ref.heartbeat().equals(IServer.HEARTBEAT_ANSWER))
 						{
 							if(!SERVER_OK || FIRST_TIME)
 							{
-								model.addLogText("[check_T] il server " + model.getServer2Connect() + " è online!");
+								model.addLogText("[check_T] il server " + model.getServer2Connect() + " e' online!");
 								SERVER_OK = connectToServer();				//mi connetto al server in automatico
 							}
 						}
@@ -139,7 +139,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 						if(SERVER_OK || FIRST_TIME)
 						{
 							model.setLogColor(Color.RED); 
-							model.addLogText("[check_T] il server " + model.getServer2Connect() + " è offline.");
+							model.addLogText("[check_T] il server " + model.getServer2Connect() + " e' offline.");
 							if(model.getDisconnectBtext().equals(DISCONNECT_BUTTON_TEXT) ||  //se ero connesso
 							   model.getDisconnectBtext().equals(CONNECTION_BUTTON_TEXT) )	 //oppure in fase di connessione
 								model.addLogText("[check_T] connessione al server " + model.getServer2Connect() + " terminata!");
@@ -161,7 +161,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 					}
 					if(SERVER_OK || FIRST_TIME)
 					{
-						model.addLogText("[check_T] il server " + model.getServer2Connect() + " è offline.");
+						model.addLogText("[check_T] il server " + model.getServer2Connect() + " e' offline.");
 						if(model.getDisconnectBtext().equals(DISCONNECT_BUTTON_TEXT) ||  //se ero connesso
 						   model.getDisconnectBtext().equals(CONNECTION_BUTTON_TEXT) )	 //oppure in fase di connessione
 							model.addLogText("[check_T] connessione al server " + model.getServer2Connect() + " terminata!");
@@ -186,7 +186,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 					}
 				}	
 
-				if(FIRST_TIME)FIRST_TIME = false; //non è più la prima volta :(
+				if(FIRST_TIME)FIRST_TIME = false; //non e' piu' la prima volta :(
 				
 			}//end while(1)			
 		}//end run()
@@ -227,7 +227,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 						model.addResourceToDownloadQueue(risorsaDaCercare, listaClient);
 					}				
 					model.addLogText("[ricerca_T] risorsa " + risorsaDaCercare.getName() + " " + risorsaDaCercare.getNparts() + " aggiunta in coda download!");	
-					view.setFindText(""); //ora che la risorsa è stata aggiunta svuoto il campo di testo
+					view.setFindText(""); //ora che la risorsa e' stata aggiunta svuoto il campo di testo
 				}else{
 					model.addLogText("[ricerca_T] risorsa " + risorsaDaCercare.getName() + " " + risorsaDaCercare.getNparts() + " non trovata!");
 				}
@@ -293,7 +293,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 						{
 							do{
 								parte = randInt(0, risorsa.getNparts() - 1);			//prendo una parte random
-							}while(risorsa.isPartFull(parte));							//esco se la parte è vuota
+							}while(risorsa.isPartFull(parte));							//esco se la parte e' vuota
 							risorsa.setPart(parte, RESOURCE_FULL);
 							
 							do{
@@ -349,7 +349,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 					activeClients.remove(client);
 				}catch(Exception e){
 					model.addLogText("[download_T] richiesta download fallita!");
-					//il client non è raggiungibile, quindi lo elimino dalla lista client
+					//il client non e' raggiungibile, quindi lo elimino dalla lista client
 					activeClients.remove(client);
 					listaClient.remove(clientPos);
 				}		
@@ -452,15 +452,15 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 				
 				view.setFindText(nomeRisorsa + " " + partiRisorsa);	
 				
-				//ora cerco se ho già la risorsa che l'utente sta cercando
+				//ora cerco se ho gia' la risorsa che l'utente sta cercando
 				if(model.resourceIsHere(nomeRisorsa,partiRisorsa))
 				{
-					model.addLogText("[input_err] risorsa già presente!");
+					model.addLogText("[input_err] risorsa gia' presente!");
 					break;
 				}				
 				if(model.resourceIsDownloading(nomeRisorsa,partiRisorsa))
 				{
-					model.addLogText("[input_err] risorsa già in coda download!");
+					model.addLogText("[input_err] risorsa gia' in coda download!");
 					break;
 				}				
 						
@@ -488,7 +488,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 		try{
 			ref = (IServer) Naming.lookup("rmi://" + HOST + "/" + RMITAG + "/" + _nome);
 		}catch(NotBoundException e){
-			model.addLogText("il server " + model.getServer2Connect() + " è offline!");
+			model.addLogText("il server " + model.getServer2Connect() + " e' offline!");
 		}catch(Exception e){
 			model.addLogText("problemi con la connessione RMI!");
 		}
@@ -614,7 +614,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 				partiRisorsa = Integer.parseInt(_R[i+1]);	//provo a convertire il numero di parti della risorsa
 			}catch(NumberFormatException nfe)
 			{
-				continue;									//se non è un valore numerico non la considero				
+				continue;									//se non e' un valore numerico non la considero				
 			}
 			if(partiRisorsa==0){continue;}					//risorse con zero parti non le considero
 			

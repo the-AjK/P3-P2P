@@ -131,7 +131,7 @@ public class ClientView implements java.util.Observer
 	/****************************************************************************************\
 	|	public void update(Observable _obs, Object _obj)
 	|	description: implementazione dell'observer, metodo richiamato per eseguire il refresh
-	|				 della GUI in modalità "model-pull", la view usa il riferimento al model
+	|				 della GUI in modalita' "model-pull", la view usa il riferimento al model
 	|				 per andare a leggere e recuperare i campi dati da visualizzare.
 	\****************************************************************************************/
 	public void update(Observable _obs, Object _obj)

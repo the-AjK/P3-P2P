@@ -23,11 +23,11 @@ public class ClientModel extends java.util.Observable
 	//campi dati
 	private DeviceClient me;								//contiene nomeClient, riferimento e lista risorse
 	private String server2connect;							//nome del server a cui connettersi
-	private int downloadCapacity;							//capacità di download
+	private int downloadCapacity;							//capacita' di download
 	private Vector<String> log;								//log di sistema
 	private Color coloreLog;								//colore testo della casella log
-	private boolean findBenabled;							//flag che indica se il pulsante di ricerca è abilitato oppure no
-	private boolean disconnectBenabled;						//flag che indica se il pulsante di disconnessione è abilitato oppure no
+	private boolean findBenabled;							//flag che indica se il pulsante di ricerca e' abilitato oppure no
+	private boolean disconnectBenabled;						//flag che indica se il pulsante di disconnessione e' abilitato oppure no
 	private String disconnectBtext;							//testo del pulsante di disconnessione
 	private Vector<ResourceDownloadQueue> downloadQueue;	//lista di risorse in fase di download
 	private String animationIcon;							//piccola icona di animazione per visualizzare lo stato del client
@@ -75,7 +75,7 @@ public class ClientModel extends java.util.Observable
 	
 	/****************************************************************************************\
 	|	public void viewRefresh()
-	|	description: notifica la parte view in modalità "model-pull"
+	|	description: notifica la parte view in modalita' "model-pull"
 	\****************************************************************************************/
 	private void viewRefresh()
 	{
@@ -207,7 +207,7 @@ public class ClientModel extends java.util.Observable
 	
 	/****************************************************************************************\
 	|	public boolean resourceIsDownloading(String _nomeRisorsa, int _partiRisorsa)
-	|	description: restituisce true se la risorsa è nella coda download
+	|	description: restituisce true se la risorsa e' nella coda download
 	\****************************************************************************************/
 	public boolean resourceIsDownloading(String _nomeRisorsa, int _partiRisorsa)
 	{
@@ -222,7 +222,7 @@ public class ClientModel extends java.util.Observable
 	
 	/****************************************************************************************\
 	|	public boolean resourceIsHere(String _nomeRisorsa, int _partiRisorsa)
-	|	description: restituisce true se la risorsa è presente nella lista risorse
+	|	description: restituisce true se la risorsa e' presente nella lista risorse
 	\****************************************************************************************/
 	public boolean resourceIsHere(String _nomeRisorsa, int _partiRisorsa)
 	{
@@ -368,7 +368,7 @@ public class ClientModel extends java.util.Observable
 	
 	/****************************************************************************************\
 	|	public boolean getFindBenabled()
-	|	description: restituisce true se il pulsante di ricerca è abilitato, false altrimenti
+	|	description: restituisce true se il pulsante di ricerca e' abilitato, false altrimenti
 	\****************************************************************************************/
 	public boolean getFindBenabled(){return findBenabled;}
 	
@@ -384,7 +384,7 @@ public class ClientModel extends java.util.Observable
 	
 	/****************************************************************************************\
 	|	public boolean getDisconnectBenabled()
-	|	description: restituisce true se il pulsante di disconnessione è abilitato, false 
+	|	description: restituisce true se il pulsante di disconnessione e' abilitato, false 
 	|				 altrimenti
 	\****************************************************************************************/
 	public boolean getDisconnectBenabled(){return disconnectBenabled;}

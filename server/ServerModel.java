@@ -52,7 +52,7 @@ public class ServerModel extends java.util.Observable
 	
 	/****************************************************************************************\
 	|	public void viewRefresh()
-	|	description: notifica la parte view in modalità "model-pull"
+	|	description: notifica la parte view in modalita' "model-pull"
 	\****************************************************************************************/
 	private void viewRefresh()
 	{
@@ -195,7 +195,7 @@ public class ServerModel extends java.util.Observable
 	
 	/****************************************************************************************\
 	|	public boolean serverIsHere(String _serverName)
-	|	description: restituisce true se il server specificato è nella lista servers
+	|	description: restituisce true se il server specificato e' nella lista servers
 	\****************************************************************************************/
 	public boolean serverIsHere(String _serverName)
 	{
@@ -222,7 +222,7 @@ public class ServerModel extends java.util.Observable
 	
 	/****************************************************************************************\
 	|	public boolean clientIsHere(String _clientName)
-	|	description: restituisce true se il client specificato è nella lista clients
+	|	description: restituisce true se il client specificato e' nella lista clients
 	\****************************************************************************************/
 	public boolean clientIsHere(String _clientName)
 	{

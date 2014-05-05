@@ -18,7 +18,7 @@ public class ClientStarter
 	\****************************************************************************************/
 	public ClientStarter(	String _nomeClient,		//nome client
 							String _server2connect,	//nome server
-							int _D, 				//disponibilità download
+							int _D, 				//disponibilita' download
 							String[] _R				//elenco risorse (nome risorse + n_parti)
 						) throws Exception 
 	{ 
@@ -72,7 +72,7 @@ public class ClientStarter
 		
 			ClientStarter s=new ClientStarter(	args[0].toLowerCase(),		//nome client
 												args[1].toLowerCase(),		//nome server
-												Integer.parseInt(args[2]),	//capacità di download
+												Integer.parseInt(args[2]),	//capacita' di download
 												risorse			//stringhe (nome risorsa + n_parti)
 											  );
 		}
