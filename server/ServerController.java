@@ -312,14 +312,12 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 	}
 	
 	/****************************************************************************************\
-	|	public void actionPerformed(java.awt.event.ActionEvent _e)
+	|	public void actionPerformed(ActionEvent _e)
 	|	description: implementazione dell'interfaccia ActionListener
 	\****************************************************************************************/
 	public void actionPerformed(ActionEvent _e)
 	{
-		System.out.println ("Controller: The " + _e.getActionCommand() 
-			+ " button is clicked at " + new java.util.Date(_e.getWhen())
-			+ " with e.paramString " + _e.paramString() );
+		//implementare qui le azioni in base all'ActionEvent ricevuta dalla vista
 	}
 	
 	/****************************************************************************************\

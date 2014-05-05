@@ -402,79 +402,78 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 	\****************************************************************************************/
 	public void actionPerformed(ActionEvent _e)
 	{
-		switch(_e.getActionCommand())
+		if(_e.getActionCommand().equals(FIND_BUTTON_TEXT))
 		{
-			case FIND_BUTTON_TEXT:
-				String textArea = view.getFindText().toLowerCase() + " "; //recupero la stringa cercata dalla view con sentinella finale
+			String textArea = view.getFindText().toLowerCase() + " "; //recupero la stringa cercata dalla view con sentinella finale
 				
-				int firstChar = 0;
-				while(firstChar < textArea.length()-1 && textArea.charAt(firstChar) == ' ')	//elimino gli spazi vuoti iniziali
-					firstChar++;	
-				textArea = textArea.substring(firstChar);				
-				
-				int firstWhiteChar = textArea.indexOf(" ");
-				int secondWhiteChar = textArea.indexOf(" ",firstWhiteChar + 1);
-				if(firstWhiteChar<=0)
-				{
-					model.addLogText("[input_err] inserisci nome risorsa!");		//manca il nome della risorsa da cercare
-					view.setFindText("");
-					break;
-				} 	
-				
-				String nomeRisorsa = textArea.substring(0,firstWhiteChar);		//recupero il nome della risorsa
-				
-				if(secondWhiteChar<=0)
-				{
-					model.addLogText("[input_err] nome risorsa incompleto o errato!");	//manca il numero di parti della risorsa da cercare
-					view.setFindText(nomeRisorsa);
-					break;
-				} 
+			int firstChar = 0;
+			while(firstChar < textArea.length()-1 && textArea.charAt(firstChar) == ' ')	//elimino gli spazi vuoti iniziali
+				firstChar++;	
+			textArea = textArea.substring(firstChar);				
+			
+			int firstWhiteChar = textArea.indexOf(" ");
+			int secondWhiteChar = textArea.indexOf(" ",firstWhiteChar + 1);
+			if(firstWhiteChar<=0)
+			{
+				model.addLogText("[input_err] inserisci nome risorsa!");		//manca il nome della risorsa da cercare
+				view.setFindText("");
+				return;
+			} 	
+			
+			String nomeRisorsa = textArea.substring(0,firstWhiteChar);		//recupero il nome della risorsa
+			
+			if(secondWhiteChar<=0)
+			{
+				model.addLogText("[input_err] nome risorsa incompleto o errato!");	//manca il numero di parti della risorsa da cercare
+				view.setFindText(nomeRisorsa);
+				return;
+			} 
 
-				while(firstWhiteChar < textArea.length()-1 && textArea.charAt(firstWhiteChar) == ' ')	//elimino gli spazi vuoti intermedi
-					firstWhiteChar++;	
-				secondWhiteChar = textArea.indexOf(" ",firstWhiteChar);
-				String partiRisorsaText = textArea.substring(firstWhiteChar, secondWhiteChar); 			//recupero il numero di parti
+			while(firstWhiteChar < textArea.length()-1 && textArea.charAt(firstWhiteChar) == ' ')	//elimino gli spazi vuoti intermedi
+				firstWhiteChar++;	
+			secondWhiteChar = textArea.indexOf(" ",firstWhiteChar);
+			String partiRisorsaText = textArea.substring(firstWhiteChar, secondWhiteChar); 			//recupero il numero di parti
+	
+			int partiRisorsa = 0;
+			try
+			{
+				partiRisorsa = Integer.parseInt(partiRisorsaText);	//provo a convertire il numero di parti della risorsa
+			}catch(NumberFormatException nfe)
+			{
+				model.addLogText("[input_err] formato numerico parti risorsa errato!");
+				return;
+			}
+			if(partiRisorsa <= 0)
+			{
+				model.addLogText("[input_err] impossibile cercare risorse vuote!");
+				return;
+			}					
+			
+			view.setFindText(nomeRisorsa + " " + partiRisorsa);	
+			
+			//ora cerco se ho gia' la risorsa che l'utente sta cercando
+			if(model.resourceIsHere(nomeRisorsa,partiRisorsa))
+			{
+				model.addLogText("[input_err] risorsa gia' presente!");
+				return;
+			}				
+			if(model.resourceIsDownloading(nomeRisorsa,partiRisorsa))
+			{
+				model.addLogText("[input_err] risorsa gia' in coda download!");
+				return;
+			}				
+					
+			//ora che tutto torna creo il thread di ricerca, lo avvio ed esco!
+			(new RicercaRisorseThread(nomeRisorsa,partiRisorsa)).start();
 		
-				int partiRisorsa = 0;
-				try
-				{
-					partiRisorsa = Integer.parseInt(partiRisorsaText);	//provo a convertire il numero di parti della risorsa
-				}catch(NumberFormatException nfe)
-				{
-					model.addLogText("[input_err] formato numerico parti risorsa errato!");
-					break;
-				}
-				if(partiRisorsa <= 0)
-				{
-					model.addLogText("[input_err] impossibile cercare risorse vuote!");
-					break;
-				}					
-				
-				view.setFindText(nomeRisorsa + " " + partiRisorsa);	
-				
-				//ora cerco se ho gia' la risorsa che l'utente sta cercando
-				if(model.resourceIsHere(nomeRisorsa,partiRisorsa))
-				{
-					model.addLogText("[input_err] risorsa gia' presente!");
-					break;
-				}				
-				if(model.resourceIsDownloading(nomeRisorsa,partiRisorsa))
-				{
-					model.addLogText("[input_err] risorsa gia' in coda download!");
-					break;
-				}				
-						
-				//ora che tutto torna creo il thread di ricerca, lo avvio ed esco!
-				(new RicercaRisorseThread(nomeRisorsa,partiRisorsa)).start();
-				break;
-				
-			case CONNECT_BUTTON_TEXT:
-				connectToServer();
-				break;
-				
-			case DISCONNECT_BUTTON_TEXT:
-				disconnectFromServer();
-				break;		
+		}
+		else if(_e.getActionCommand().equals(CONNECT_BUTTON_TEXT))
+		{
+			connectToServer();
+		}
+		else if(_e.getActionCommand().equals(DISCONNECT_BUTTON_TEXT))
+		{			
+			disconnectFromServer();	
 		}
 	}
 	
