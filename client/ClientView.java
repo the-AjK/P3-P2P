@@ -40,12 +40,8 @@ public class ClientView implements java.util.Observer
 	{ 
 		//imposto il layout principale
 		frame = new JFrame("Client in avvio...");
-		frame.setLayout(new FlowLayout());
-		
-		JPanel info = new JPanel();
-		info.setLayout(new GridLayout(2,1));
-		info.setPreferredSize(new Dimension(400,295));
-		
+		frame.setLayout(new BorderLayout());
+
 		//preparo il primo pannello per i comandi utente
 		JPanel userActionsP = new JPanel();
 		userActionsP.setLayout(new FlowLayout());
@@ -96,12 +92,12 @@ public class ClientView implements java.util.Observer
 		caret.setUpdatePolicy(DefaultCaret.UPDATE_WHEN_ON_EDT);
 		logList.setBorder(BorderFactory.createTitledBorder("Log"));
 		log.setForeground(Color.RED);
+		logList.setPreferredSize(new Dimension(430, 180));
 				
 		//aggiungo i vari pannelli al JFrame principale
-		info.add(fileStatusP);
-		info.add(logList);
-		frame.add(userActionsP);
-		frame.add(info);
+		frame.add(userActionsP,BorderLayout.NORTH);
+		frame.add(fileStatusP,BorderLayout.CENTER);
+		frame.add(logList,BorderLayout.SOUTH);		
 		
 		//non permetto di editare il testo
 		files.setEditable(false);
@@ -109,9 +105,10 @@ public class ClientView implements java.util.Observer
 		log.setEditable(false);
 				
 		//impostazioni generali della finestra
-		frame.setSize(412, 402);
+		frame.setSize(430, 430);
+		frame.setMinimumSize(new Dimension(430,430));
 		frame.setVisible(true);
-		frame.setResizable(false);
+		frame.setResizable(true);
 		frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 		
 	} //ClientView

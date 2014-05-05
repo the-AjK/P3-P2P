@@ -37,11 +37,13 @@ public class ServerView implements java.util.Observer
 	{ 
 		//layout principale
 		frame = new JFrame("Server in avvio...");
-		frame.setLayout(new GridLayout(2,1,10,5));
+		//frame.setLayout(new GridLayout(2,1,10,5));
+		frame.setLayout(new BorderLayout());
 		
 		//creo pannello principale
 		JPanel connectionsP = new JPanel();
 		connectionsP.setLayout(new GridLayout(1,2,5,5));	
+		connectionsP.setPreferredSize(new Dimension(430, 200));
 		
 		//ora le varie aree di testo
 		clients = new JTextArea();
@@ -62,10 +64,11 @@ public class ServerView implements java.util.Observer
 		caret.setUpdatePolicy(DefaultCaret.UPDATE_WHEN_ON_EDT);
 		logList.setBorder(BorderFactory.createTitledBorder("Log"));
 		log.setForeground(Color.RED);
+		logList.setPreferredSize(new Dimension(430, 180));
 		
 		//aggiungo le varie componenti al JFrame principale
-		frame.add(connectionsP);
-		frame.add(logList);
+		frame.add(connectionsP,BorderLayout.CENTER);
+		frame.add(logList,BorderLayout.SOUTH);
 		
 		//non permetto di editare il testo
 		clients.setEditable(false);
@@ -73,9 +76,10 @@ public class ServerView implements java.util.Observer
 		log.setEditable(false);
 				
 		//impostazioni generali della finestra
-		frame.setSize(400, 400);
+		frame.setSize(430, 430);
+		frame.setMinimumSize(new Dimension(430,430));
 		frame.setVisible(true);
-		frame.setResizable(false);
+		frame.setResizable(true);
 		frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 	
 	} //ServerView()
