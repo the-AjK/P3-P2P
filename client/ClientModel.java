@@ -84,6 +84,12 @@ public class ClientModel extends java.util.Observable
 	}
 	
 	/****************************************************************************************\
+	|	public DeviceClient getMe()
+	|	description: restituisce me stesso
+	\****************************************************************************************/
+	public DeviceClient getMe(){return me;}
+	
+	/****************************************************************************************\
 	|	public String getAnimIcon()
 	|	description: restituisce l'icona
 	\****************************************************************************************/
@@ -193,11 +199,14 @@ public class ClientModel extends java.util.Observable
 			res = res + downloadQueue.get(i).risorsa.getName() + " [ ";
 			for(int j=0; j<nparti; j++)
 			{
-				if(downloadQueue.get(i).risorsa.isPartEmpty(j))
-				{
+				if(downloadQueue.get(i).risorsa.isPartEmpty(j)){
 					res = res + "_ ";
+				}else if(downloadQueue.get(i).risorsa.isPartInDownload(j)){
+					res = res + "[ ] ";
+				}else if(downloadQueue.get(i).risorsa.isPartFull(j)){
+					res = res + "[*] ";
 				}else{
-					res = res + "[] ";
+					res = res + "--- ";  //unknow status ! :(
 				}
 			}
 			res = res + "]\n";

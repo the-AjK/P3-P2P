@@ -14,6 +14,7 @@ package client;
 import java.rmi.*;
 import java.util.Vector; 
 import common.Resource;
+import common.DeviceClient;
 
 public interface IClient extends Remote
 { 
@@ -33,9 +34,15 @@ public interface IClient extends Remote
 	public Vector<Resource> getResourceList() throws RemoteException;
 	
 	/****************************************************************************************\
-	|	public boolean download(Resource _risorsa, int _parte, String _client) 
-	|	description: utilizzato dai client per richiedere una parte di risorsa
+	|	public boolean downloadStart(final Resource _risorsa, final int _parte, final DeviceClient _client) 
+	|	description: utilizzato dai client per richiedere l'avvio del download di una parte di risorsa
 	\****************************************************************************************/
-	public boolean download(Resource _risorsa, int _parte, String _client) throws RemoteException;
+	public boolean downloadStart(final Resource _risorsa,final int _parte, final DeviceClient _client) throws RemoteException;
+	
+	/****************************************************************************************\
+	|	public boolean downloadStop(final Resource _risorsa, final int _parte, final DeviceClient _client) 
+	|	description: utilizzato dai client per notificare la fine dell'upload della parte di risorsa
+	\****************************************************************************************/
+	public boolean downloadStop(final Resource _risorsa,final int _parte, final DeviceClient _client) throws RemoteException;
 	
 } //IClient

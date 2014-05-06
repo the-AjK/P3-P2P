@@ -29,12 +29,12 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 {
 	//impostazioni modificabili
 	private static final String HOST = "localhost:1099";					//host per la connessione RMI
-	private static final int DOWNLOAD_TIMEOUT = 5000;						//tempo per simulare il download di una parte di risorsa
+	private static final int DOWNLOAD_TIMEOUT = 7000;						//tempo per simulare il download di una parte di risorsa
 	private static final boolean VERBOSE_LOG = true;						//se true visualizza piu' messaggi di log
 	
 	
 	//impostazioni NON modificabili
-	private static final int CHECKCONNECTIONS_TIMEOUT = 10000;				//timeout per controllo connessione in background
+	private static final int CHECKCONNECTIONS_TIMEOUT = 3000;				//timeout per controllo connessione in background
 	private static final int CHECKDOWNLOADQUEUE_TIMEOUT = 2000;				//timeout per controllo coda download
 	private static final boolean RESOURCE_EMPTY = false;					//risorsa vuota
 	private static final boolean RESOURCE_FULL = true;						//risorsa completa
@@ -46,7 +46,8 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 	private static final String CHECKCONNECTIONS_THREAD = "CheckConnectionsThread";	//nome del thread controllo connessioni
 	private static final String RICERCARISORSA_THREAD = "RicercaRisorsaThread";	
 	private static final String DOWNLOADMANAGER_THREAD = "DownloadManagerThread";
-	private static final String DOWNLOADRESOURCEPART_THREAD = "DownloadResourcePartThread";	
+	private static final String DOWNLOADRESOURCEPART_THREAD = "DownloadResourcePartThread";
+	private static final String UPLOADRESOURCEPART_THREAD = "UploadResourcePartThread";
 	
 	//gestione numero random per il thread download
 	private Random rand;
@@ -240,7 +241,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 				
 				if(listaClient.size() > 0) //se esiste almeno un client che possiede la risorsa aggiungo in coda download
 				{
-					synchronized(model)
+					//synchronized(model)
 					{ 
 						model.addResourceToDownloadQueue(risorsaDaCercare, listaClient);
 					}				
@@ -291,14 +292,21 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 					//scorro la lista delle risorse in download per vedere se ci sono parti da scaricare
 					for(int i=0; i<model.getNdownloadQueue(); i++)
 					{
+						//if(Thread.currentThread().isInterrupted())break;
+						
+						//synchronized(lock)
+						{
 						risorsa = model.getResourceInDownload(i); 				//prendo la risorsa
 						if(risorsa.isFull())
 						{
 							model.addLogText("[download_T] download risorsa " + risorsa.getName() + " " + risorsa.getNparts() + " terminato!");
 							//sposto la nuova risorsa completa sulla lista delle mie risorse
-							model.addResource(risorsa);
-							model.removeResourceInDownload(i);	//rimuovo la risorsa dalla coda download
-							
+							sleep(3000);
+							synchronized(model)
+							{
+								model.addResource(risorsa);
+								model.removeResourceInDownload(i);	//rimuovo la risorsa dalla coda download
+							}							
 							if(VERBOSE_LOG)
 								model.addLogText("[download_T] comunico nuova lista risorse al server " + model.getServer2Connect());
 							try{
@@ -314,23 +322,28 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 							listaClient = model.getDownloadClientListForResource(i);
 							int parte;
 							int clientPos;
-							while(activeDownloads < model.getDownloadCapacity() ) 			//vedo se posso scaricare
+							synchronized(lock)
+						    {
+							if(activeDownloads < model.getDownloadCapacity() &&
+								listaClient.size() > activeClients.size()	)//vedo se posso scaricare
 							{
-								do{
-									parte = randInt(0, risorsa.getNparts() - 1);			//prendo una parte random
-								}while(risorsa.isPartFull(parte));							//esco se la parte e' vuota
-								
-								risorsa.setPartInDownload(parte);							//setto come in download
-								
 								do{
 									clientPos = randInt(0, listaClient.size() - 1);
 									client = listaClient.get(clientPos);					//prendo un client random
-								}while(activeClients.contains(client));						//che non sia attivo 
-								
+								}while(activeClients.contains(client));						//che non sia attivo 								
+								do{
+									parte = randInt(0, risorsa.getNparts() - 1);			//prendo una parte random
+								}while(risorsa.isPartFull(parte) || 
+									   risorsa.isPartInDownload(parte) );					//esco se la parte e' vuota
+								risorsa.setPartInDownload(parte);							//setto come in download
+								activeDownloads++;
+								activeClients.add(client);
 								//avvio un thread di download per la parte di risorsa
 								(new DownloadResourcePartThread(risorsa, parte, listaClient, clientPos)).start();						
-							}						
-						}					
+							}	
+							}
+							}
+						}	//synch(lock)				
 					}//end for
 					//}//end synchronized(model)
 				}//end while( !Thread.currentThread().isInterrupted() )	
@@ -369,39 +382,45 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 			public void run()
 			{
 				try{
-					synchronized(lock)
-					{
-					activeDownloads++;
-					activeClients.add(listaClient.get(clientPos));
-					model.addLogText("[downloadP_T] avvio download " + risorsa.getName() + "." + parte + " dal client " + client.getName());
 					
-					sleep(DOWNLOAD_TIMEOUT);	//simulo il download
+					
+					model.addLogText("[downloadP_T] avvio download " + risorsa.getName() + "." + parte + " dal client " + client.getName());
+											
 					try{
-						if(client.getRef().download(risorsa, parte, model.getClientName()))	//richiedo il download
+						if(client.getRef().downloadStart(risorsa, parte, model.getMe()))	//richiedo il download
 						{
-							risorsa.setPartFull(parte);
-							model.addLogText("[downloadP_T] download " + risorsa.getName() + "." + parte + " completato!");
+							sleep(DOWNLOAD_TIMEOUT * 3);		//timeout download, spero di essere interrotto prima di finire il tempo					
+							model.addLogText("[downloadP_T] timeout! download " + risorsa.getName() + "." + parte + " fallito!");
 						}else{
+							//il client non ha accettato la richiesta di download
 							model.addLogText("[downloadP_T] download " + risorsa.getName() + "." + parte + " fallito!");
 						}
-						activeClients.remove(client);
-					}catch(Exception e){
-						model.addLogText("[downloadP_T] richiesta download fallita!");
+								
+					}catch(RemoteException re){
+						model.addLogText("[downloadP_T] client " + client.getName() + " offline, download " + risorsa.getName() + "." + parte + " interrotto!");
 						//il client non e' raggiungibile, quindi lo elimino dalla lista client
+						synchronized(lock)
+						{
 						risorsa.setPartEmpty(parte);	//reimposto la risorsa come vuota
 						activeClients.remove(client);
 						listaClient.remove(clientPos);
+						}
 					}		
-					activeDownloads--;
-					}//end synchronized(lock)
+					
 				}catch(InterruptedException ie){
-					model.addLogText("[downloadP_T] interrupted exception!");
+					//model.addLogText("[downloadP_T] interrupted exception!");
+					
+					//TODO discriminare se l'interruzione è avvenuta a causa di downloadStop oppure a causa di una disconnessione manuale
+					model.addLogText("[downloadP_T] download " + risorsa.getName() + "." + parte + " completato!");
+					risorsa.setPartFull(parte);				//setto la parte come completata
+					activeClients.remove(client);
+					activeDownloads--;
 				}
 				catch(Exception e){
 					model.addLogText("[downloadP_T] interrupted exception durante attesa lock!");
 				}
 				finally{
-					model.addLogText("[downloadP_T] thread download parte risorsa terminato!");
+				
 				}
 			}//end run()
 		}
@@ -454,7 +473,8 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 		{
 			if(threadList[i].getName().startsWith(RICERCARISORSA_THREAD) ||
 			   threadList[i].getName().startsWith(DOWNLOADMANAGER_THREAD) ||
-			   threadList[i].getName().startsWith(DOWNLOADRESOURCEPART_THREAD) )			
+			   threadList[i].getName().startsWith(DOWNLOADRESOURCEPART_THREAD) ||
+			   threadList[i].getName().startsWith(UPLOADRESOURCEPART_THREAD) )			
 				threadList[i].interrupt();
 		}
 	}
@@ -770,13 +790,46 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 	}
 	
 	/****************************************************************************************\
-	|	public boolean download(Resource _risorsa, int _parte, String _client)
+	|	public boolean downloadStart(final Resource _risorsa, final int _parte, final DeviceClient _client)
 	|	description: implementazione del metodo remoto dell'interfaccia IClient
 	\****************************************************************************************/
-	public boolean download(Resource _risorsa, int _parte, String _client) throws RemoteException
+	public boolean downloadStart(final Resource _risorsa,final int _parte, final DeviceClient _client) throws RemoteException
 	{
-		model.addLogText("[upload] invio " + _risorsa.getName() + "." + _parte + " al client " + _client + " completato!");
+		(new Thread(UPLOADRESOURCEPART_THREAD + "_" + _risorsa + "." + _parte){
+			public void run()
+			{
+				try
+				{
+					model.addLogText("[upload_T] il client " + _client.getName() + " richiede risorsa " + _risorsa.getName() + "." + _parte + "...");
+					sleep(DOWNLOAD_TIMEOUT);									//simulo l'upload
+					if(_client.getRef().downloadStop(_risorsa,_parte,_client))
+					{
+						model.addLogText("[upload_T] upload " + _risorsa.getName() + "." + _parte + " al client " + _client.getName() + " completato!");
+					}else{
+						model.addLogText("[upload_T] impossibile completare l'upload " + _risorsa.getName() + "." + _parte + " al client " + _client.getName() + "!");
+					}
+				}catch(InterruptedException ie){
+					model.addLogText("[upload_T] upload " + _risorsa.getName() + "." + _parte + " al client " + _client.getName() + " interrotto!");
+				}catch(RemoteException re){
+					model.addLogText("[upload_T] upload interrotto, impossibile contattare il client " + _client.getName() + "!");
+				}
+				finally{
+					
+				}			
+			}// end run()
+		}).start();
 		return true;
 	}
+	
+	/****************************************************************************************\
+	|	public boolean downloadStop(final Resource _risorsa, final int _parte, final DeviceClient _client) 
+	|	description: implementazione del metodo remoto dell'interfaccia IClient
+	\****************************************************************************************/
+	public boolean downloadStop(final Resource _risorsa,final int _parte, final DeviceClient _client) throws RemoteException
+	{
+		model.addLogText("[downloadP_T] download in terminazione...");
+		killThread(DOWNLOADRESOURCEPART_THREAD + "_" + _risorsa.getName() + "." + _parte);
+		return true;
+	}	
 
 }//end class ClientController()
