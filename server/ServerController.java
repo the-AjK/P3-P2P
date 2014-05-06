@@ -254,7 +254,8 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 		int serverConnessi = 0;
 		for(int i=0; i<serverNamesList.length; i++)
 		{
-			synchronized(model)		//prendo il lock sui dati del model
+			//BUG: synch su linux blocca la connessione all'avvio
+			//synchronized(model)		//prendo il lock sui dati del model
 			{
 				//controllo se contiene il TAG
 				if(serverNamesList[i].contains(RMITAG + "/"))

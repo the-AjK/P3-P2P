@@ -92,7 +92,7 @@ public class ClientView implements java.util.Observer
 		caret.setUpdatePolicy(DefaultCaret.UPDATE_WHEN_ON_EDT);
 		logList.setBorder(BorderFactory.createTitledBorder("Log"));
 		log.setForeground(Color.RED);
-		logList.setPreferredSize(new Dimension(430, 180));
+		logList.setPreferredSize(new Dimension(470, 180));
 				
 		//aggiungo i vari pannelli al JFrame principale
 		frame.add(userActionsP,BorderLayout.NORTH);
@@ -105,8 +105,8 @@ public class ClientView implements java.util.Observer
 		log.setEditable(false);
 				
 		//impostazioni generali della finestra
-		frame.setSize(430, 430);
-		frame.setMinimumSize(new Dimension(430,430));
+		frame.setSize(470, 400);
+		frame.setMinimumSize(new Dimension(470,400));
 		frame.setVisible(true);
 		frame.setResizable(true);
 		frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
