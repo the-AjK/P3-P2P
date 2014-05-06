@@ -17,6 +17,7 @@ import java.rmi.*;
 import java.rmi.server.*;
 import java.awt.event.*;
 import java.util.Vector; 
+import java.util.Set;
 import java.awt.Color;
 import common.Resource;
 import common.DeviceClient;
@@ -33,7 +34,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 	
 	
 	//impostazioni NON modificabili
-	private static final int CHECKCONNECTIONS_TIMEOUT = 3000;				//timeout per controllo connessione in background
+	private static final int CHECKCONNECTIONS_TIMEOUT = 10000;				//timeout per controllo connessione in background
 	private static final int CHECKDOWNLOADQUEUE_TIMEOUT = 2000;				//timeout per controllo coda download
 	private static final boolean RESOURCE_EMPTY = false;					//risorsa vuota
 	private static final boolean RESOURCE_FULL = true;						//risorsa completa
@@ -42,6 +43,10 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 	private static final String DISCONNECT_BUTTON_TEXT = "Disconnetti";	
 	private static final String CONNECTION_BUTTON_TEXT = "in connessione...";
 	private static final String FIND_BUTTON_TEXT = "Cerca e Scarica";
+	private static final String CHECKCONNECTIONS_THREAD = "CheckConnectionsThread";	//nome del thread controllo connessioni
+	private static final String RICERCARISORSA_THREAD = "RicercaRisorsaThread";	
+	private static final String DOWNLOADMANAGER_THREAD = "DownloadManagerThread";
+	private static final String DOWNLOADRESOURCEPART_THREAD = "DownloadResourcePartThread";	
 	
 	//gestione numero random per il thread download
 	private Random rand;
@@ -94,7 +99,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 	{
 		public CheckConnectionsThread()
 		{
-			super("CheckConnectionsThread");
+			super(CHECKCONNECTIONS_THREAD);
 		}
 		
 		public void run()
@@ -191,7 +196,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 					}	
 
 					if(FIRST_TIME)FIRST_TIME = false; //non e' piu' la prima volta :(
-					
+										
 				}//end while( !Thread.currentThread().isInterrupted() )	
 			}catch(InterruptedException ie){
 				model.addLogText("[check_T] interrupted exception!");
@@ -216,7 +221,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 		
 		public RicercaRisorsaThread(String _nomeRisorsa, int _partiRisorsa)
 		{
-			super("RicercaRisorsaThread_" + _nomeRisorsa + "_" + _partiRisorsa);
+			super(RICERCARISORSA_THREAD + "_" + _nomeRisorsa + "_" + _partiRisorsa);
 			risorsaDaCercare = new Resource(_nomeRisorsa, _partiRisorsa, RESOURCE_EMPTY);
 			listaClient = new Vector<DeviceClient>(); //lista di clients che hanno la risorsa 
 		}
@@ -263,7 +268,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 		
 		public DownloadManagerThread()
 		{
-			super("DownloadManagerThread");
+			super(DOWNLOADMANAGER_THREAD);
 			lock = new Object();
 			activeDownloads = 0;
 			activeClients = new Vector<DeviceClient>();
@@ -334,7 +339,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 			}
 			finally{
 				//non dovrebbe mai terminare, quindi se succede lo segnalo
-				model.addLogText("[download_T] thread gestione download terminato in modo imprevisto!");
+				model.addLogText("[download_T] thread gestione download terminato!");
 			}				
 		}//end run()
 		
@@ -353,7 +358,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 			
 			public DownloadResourcePartThread(Resource _risorsa, int _parte, Vector<DeviceClient> _listaClient, int _clientPos)
 			{
-				super("DownloadResourcePartThread_" + _risorsa.getName() + "." + _parte);
+				super(DOWNLOADRESOURCEPART_THREAD + "_" + _risorsa.getName() + "." + _parte);
 				risorsa = _risorsa;
 				parte = _parte;
 				listaClient = _listaClient;
@@ -392,6 +397,9 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 				}catch(InterruptedException ie){
 					model.addLogText("[downloadP_T] interrupted exception!");
 				}
+				catch(Exception e){
+					model.addLogText("[downloadP_T] interrupted exception durante attesa lock!");
+				}
 				finally{
 					model.addLogText("[downloadP_T] thread download parte risorsa terminato!");
 				}
@@ -400,6 +408,57 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 		
 	}//class DownloadManagerThread
 	
+	/****************************************************************************************\
+	|	private Thread getThread(String _threadName)
+	|	description: restituisce il thread
+	\****************************************************************************************/
+	private Thread getThread(String _threadName)
+	{
+		Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
+		Thread[] threadList = threadSet.toArray(new Thread[threadSet.size()]);
+		for(int i=0; i<threadList.length; i++)
+		{
+			if(threadList[i].getName().startsWith(_threadName))return threadList[i];
+		}
+		return null;
+	}
+	
+	/****************************************************************************************\
+	|	private boolean killThread(String _threadName)
+	|	description: restituisce il thread
+	\****************************************************************************************/
+	private boolean killThread(String _threadName)
+	{
+		Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
+		Thread[] threadList = threadSet.toArray(new Thread[threadSet.size()]);
+		for(int i=0; i<threadList.length; i++)
+		{
+			if(threadList[i].getName().startsWith(_threadName))
+			{
+				threadList[i].interrupt();
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	/****************************************************************************************\
+	|	private void killAllDownloadThreads()
+	|	description: interrompe tutti i thread che gestiscono il download
+	\****************************************************************************************/
+	private void killAllDownloadThreads()
+	{
+		Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
+		Thread[] threadList = threadSet.toArray(new Thread[threadSet.size()]);
+		for(int i=0; i<threadList.length; i++)
+		{
+			if(threadList[i].getName().startsWith(RICERCARISORSA_THREAD) ||
+			   threadList[i].getName().startsWith(DOWNLOADMANAGER_THREAD) ||
+			   threadList[i].getName().startsWith(DOWNLOADRESOURCEPART_THREAD) )			
+				threadList[i].interrupt();
+		}
+	}
+		
 	/****************************************************************************************\
 	|	private int randInt(int _min, int _max)
 	|	description: restituisce un numero intero random compreso nel range indicato
@@ -562,9 +621,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 						model.addLogTextToLine(logPos," completata!");
 						view.setFindText("");								//resetto la barra di ricerca
 						downloadManager = new DownloadManagerThread();		//creo ed avvio un nuovo thread di download
-						downloadManager.start();
-						
-						
+						downloadManager.start();						
 						CONNECT_OK = true;
 					}else{
 						model.setDisconnectBtext(CONNECT_BUTTON_TEXT);		//permetto la connessione
@@ -594,9 +651,11 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 		 
 		boolean DISCONNECT_OK = false;
 		
-		downloadManager.interrupt();			//interrompo il thread di download
-												//ed anche quello di ricerca
-		
+		//TERMINO I THREAD DI DOWNLOAD ed EVENTUALE RICERCA
+		model.addLogText("terminazione threads download..."); 
+		killAllDownloadThreads();
+		model.addLogText("richiesta terminazione threads downloads inviata.");
+								
 		synchronized(model.getDisconnectBtext()) //prendo il lock sui dati per modificare i pulsanti
 		{
 		
@@ -619,6 +678,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 					model.addLogTextToLine(logPos," fallita!");				//non mi sono disconnesso, quindi 
 				}
 			}
+			
 			try{Thread.sleep(100);}catch(Exception exc){}					//antibounce 100ms
 			
 			//sia che la disconnessione vada a buon fine che non, permetto la connessione per ripartire...

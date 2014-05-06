@@ -17,7 +17,8 @@ package server;
 import java.rmi.*;
 import java.rmi.server.*;
 import java.awt.Color;		
-import java.util.Vector; 	
+import java.util.Vector; 
+import java.util.Set;	
 import client.IClient;
 import common.DeviceServer;
 import common.DeviceClient;
@@ -33,9 +34,10 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 	private static final int CHECKCONNECTIONS_TIMEOUT = 3000;	//controllo connessioni in background [ms]
 	
 	//impostazioni NON modificabili
-	private static final String RMITAG = "P3-P2P-JK"; 			//chiave identificativa dei server per il registro RMI	
-	private boolean autoShutdownActive = false;					//flag che indica se e' attivo l'autoShutdown
-			
+	private static final String RMITAG = "P3-P2P-JK"; 								//chiave identificativa dei server per il registro RMI	
+	private boolean autoShutdownActive = false;										//flag che indica se e' attivo l'autoShutdown
+	private static final String CHECKCONNECTIONS_THREAD = "CheckConnectionsThread";	//nome del thread controllo connessioni
+	
 	//riferimenti alle componenti View e Model
 	private ServerView view;
 	private ServerModel model;
@@ -85,7 +87,7 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 	{
 		public CheckConnectionsThread()
 		{
-			super("CheckConnectionsThread");
+			super(CHECKCONNECTIONS_THREAD);
 		}
 		
 		public void run()
@@ -161,6 +163,58 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 	} //end CheckConnectionsThread
 	
 	/****************************************************************************************\
+	|	private Thread getThread(String _threadName)
+	|	description: restituisce il thread
+	\****************************************************************************************/
+	private Thread getThread(String _threadName)
+	{
+		Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
+		Thread[] threadList = threadSet.toArray(new Thread[threadSet.size()]);
+		for(int i=0; i<threadList.length; i++)
+		{
+			if(threadList[i].getName().startsWith(_threadName))return threadList[i];
+		}
+		return null;
+	}
+	
+	/****************************************************************************************\
+	|	private boolean killThread(String _threadName)
+	|	description: restituisce il thread
+	\****************************************************************************************/
+	private boolean killThread(String _threadName)
+	{
+		Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
+		Thread[] threadList = threadSet.toArray(new Thread[threadSet.size()]);
+		for(int i=0; i<threadList.length; i++)
+		{
+			if(threadList[i].getName().startsWith(_threadName))
+			{
+				threadList[i].interrupt();
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	/****************************************************************************************\
+	|	private void killAllDownloadThreads()
+	|	description: interrompe tutti i thread che gestiscono il download
+	\****************************************************************************************/
+	private void killAllDownloadThreads()
+	{
+		Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
+		Thread[] threadList = threadSet.toArray(new Thread[threadSet.size()]);
+		for(int i=0; i<threadList.length; i++)
+		{
+			/*if(threadList[i].getName().startsWith(RICERCARISORSA_THREAD) ||
+			   threadList[i].getName().startsWith(DOWNLOADMANAGER_THREAD) ||
+			   threadList[i].getName().startsWith(DOWNLOADRESOURCEPART_THREAD) )			
+				threadList[i].interrupt();
+				*/
+		}
+	}
+	
+	/****************************************************************************************\
 	|	private void serverRebind(String, ServerController)
 	|	description: pubblica il proprio nome e riferimento sul registro RMI
 	\****************************************************************************************/
@@ -229,7 +283,7 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 		for(int i=_sec; i>=0; i--)
 		{
 			model.setLogText(logPos,"server auto-shutdown tra " + i + "sec...");	
-			try{Thread.sleep(1000);}catch(Exception e){e.printStackTrace();}
+			try{Thread.sleep(1000);}catch(Exception e){}
 		}
 		System.exit(-1);
 	}
@@ -471,7 +525,10 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 		
 		synchronized(model)	//prendo il lock sui dati del model
 		{
-			model.removeClient(_clientName);			//rimuovo il client			
+			model.removeClient(_clientName);			//rimuovo il client	
+			
+			//TODO -> interrompere tutti i threads (ricerca) di questo client che vuole disconnettersi
+			
 			model.addLogText("il client " + _clientName + " si e' disconnesso!");
 		} 	
 		return true;
