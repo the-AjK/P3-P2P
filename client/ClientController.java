@@ -92,6 +92,11 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 	\****************************************************************************************/
 	private class CheckConnectionsThread extends Thread
 	{
+		public CheckConnectionsThread()
+		{
+			super("CheckConnectionsThread");
+		}
+		
 		public void run()
 		{
 			boolean FIRST_TIME = true;	//FLAG attivo solamente al primo avvio del client
@@ -200,17 +205,18 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 	}//class CheckConnectionsThread
 	
 	/****************************************************************************************\
-	|	private class RicercaRisorse
-	|	description: thread che gestisce la ricerca delle risorse
+	|	private class RicercaRisorsa
+	|	description: thread che gestisce la ricerca di una risorsa
 	\****************************************************************************************/
-	private class RicercaRisorseThread extends Thread
+	private class RicercaRisorsaThread extends Thread
 	{
 		//campi dati
 		private Resource risorsaDaCercare;
 		private Vector<DeviceClient> listaClient;
 		
-		public RicercaRisorseThread(String _nomeRisorsa, int _partiRisorsa)
+		public RicercaRisorsaThread(String _nomeRisorsa, int _partiRisorsa)
 		{
+			super("RicercaRisorsaThread_" + _nomeRisorsa + "_" + _partiRisorsa);
 			risorsaDaCercare = new Resource(_nomeRisorsa, _partiRisorsa, RESOURCE_EMPTY);
 			listaClient = new Vector<DeviceClient>(); //lista di clients che hanno la risorsa 
 		}
@@ -243,7 +249,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 			}							
 		}//end run()
 		
-	}//class RicercaRisorseThread
+	}//class RicercaRisorsaThread
 	
 	/****************************************************************************************\
 	|	private class DownloadManager
@@ -257,6 +263,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 		
 		public DownloadManagerThread()
 		{
+			super("DownloadManagerThread");
 			lock = new Object();
 			activeDownloads = 0;
 			activeClients = new Vector<DeviceClient>();
@@ -346,6 +353,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 			
 			public DownloadResourcePartThread(Resource _risorsa, int _parte, Vector<DeviceClient> _listaClient, int _clientPos)
 			{
+				super("DownloadResourcePartThread_" + _risorsa.getName() + "." + _parte);
 				risorsa = _risorsa;
 				parte = _parte;
 				listaClient = _listaClient;
@@ -497,7 +505,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 			}				
 					
 			//ora che tutto torna creo il thread di ricerca, lo avvio ed esco!
-			(new RicercaRisorseThread(nomeRisorsa,partiRisorsa)).start();
+			(new RicercaRisorsaThread(nomeRisorsa,partiRisorsa)).start();
 		
 		}
 		else if(_e.getActionCommand().equals(CONNECT_BUTTON_TEXT))

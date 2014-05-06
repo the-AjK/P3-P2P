@@ -83,6 +83,11 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 	\****************************************************************************************/
 	private class CheckConnectionsThread extends Thread
 	{
+		public CheckConnectionsThread()
+		{
+			super("CheckConnectionsThread");
+		}
+		
 		public void run()
 		{
 			String[] animIcon = {"PSP","P2P"};
