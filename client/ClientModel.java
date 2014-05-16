@@ -134,6 +134,14 @@ public class ClientModel extends java.util.Observable
 	}
 	
 	/****************************************************************************************\
+	|	public void addLogDownload(DeviceClient _client, Resource _risorsa, int _parteRisorsa)
+	|	description: aggiunge un client al log di download di una determinata parte di risorsa
+	\****************************************************************************************/
+	public void addLogDownload(DeviceClient _client, Resource _risorsa, int _parteRisorsa){
+		me.addLogDownload(_client, _risorsa, _parteRisorsa);
+	}
+	
+	/****************************************************************************************\
 	|	public void addResourceToDownloadQueue(Resource _res, Vector<DeviceClient> _listaClient)
 	|	description: aggiunge una risorsa in coda download
 	\****************************************************************************************/
@@ -191,25 +199,28 @@ public class ClientModel extends java.util.Observable
 	\****************************************************************************************/
 	public String getDownloadQueueText()
 	{
-		String res = "[ limite parti in download = " + downloadCapacity + " ]\n";
+		String res = "[ limite parti in download = " + downloadCapacity + " ]\n\n";
 		Integer nparti=0;
 		for(int i=0; i<downloadQueue.size(); i++)
 		{
 			nparti = downloadQueue.get(i).risorsa.getNparts();
-			res = res + downloadQueue.get(i).risorsa.getName() + " [ ";
+			res = res + "risorsa [" + downloadQueue.get(i).risorsa.getName() + " " + nparti + "] {\n";
+			
 			for(int j=0; j<nparti; j++)
 			{
+				res = res + "   |--> pt." + j + " ";
+				
 				if(downloadQueue.get(i).risorsa.isPartEmpty(j)){
-					res = res + "_ ";
+					res = res + "_ \n";
 				}else if(downloadQueue.get(i).risorsa.isPartInDownload(j)){
-					res = res + "[ ] ";
+					res = res + "[ ] in download...\n";
 				}else if(downloadQueue.get(i).risorsa.isPartFull(j)){
-					res = res + "[*] ";
+					res = res + "[*] done!\n";
 				}else{
-					res = res + "--- ";  //unknow status ! :(
+					res = res + "--- \n";  //unknow status ! :(
 				}
 			}
-			res = res + "]\n";
+			res = res + "}\n\n";
 		}
 		return res;
 	}
@@ -252,10 +263,30 @@ public class ClientModel extends java.util.Observable
 	{	
 		String res = "";
 		int nparti=0;
+		Vector<DeviceClient> clientList;
 		for(int i=0; i<me.getNresource(); i++)
 		{
 			nparti = me.getResource(i).getNparts();
-			res = res + me.getResource(i).getName() + " " + nparti + "\n";
+			boolean primaVolta = true;
+			res = res + "risorsa [" + me.getResource(i).getName() + " " + nparti + "] { ";
+			
+			for(int j=0; j<nparti; j++)
+			{
+				clientList = me.getResource(i).getLogDownload(j);
+					if(clientList.size() > 0)
+					{
+					if(primaVolta){res = res + "\n"; primaVolta=false;}
+					res = res + "   |--> pt." + j + " {";
+					//stampo la lista di clients che hanno scaricato questa parte
+					//di risorsa
+					for(int k=0; k<clientList.size(); k++)
+					{
+						res = res + " " + clientList.get(k).getName();
+					}
+					res = res + " }\n";
+				}
+			}		
+			res = res + "}\n";
 		}
 		return res;
 	}	

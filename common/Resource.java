@@ -74,6 +74,22 @@ public class Resource implements Serializable
 	public int getNparts(){return partiRisorsa.size();}
 	
 	/****************************************************************************************\
+	|	public Vector<DeviceClient> getLogDownload(int _parteRisorsa)
+	|	description: restituisce la lista di clients che hanno scaricato una determinata parte
+	\****************************************************************************************/
+	public Vector<DeviceClient> getLogDownload(int _parteRisorsa){
+		return partiRisorsa.get(_parteRisorsa).logDownload;
+	}
+	
+	/****************************************************************************************\
+	|	public Vector<DeviceClient> getLogDownload(int i)
+	|	description: restituisce la lista di clients che hanno scaricato una determinata parte
+	\****************************************************************************************/
+	public void addLogDownload(DeviceClient _client, int _parteRisorsa){
+		partiRisorsa.get(_parteRisorsa).logDownload.add(_client);
+	}
+	
+	/****************************************************************************************\
 	|	public boolean isFull()
 	|	description: restituisce true se la risorsa e' completa in tutte le sue parti
 	\****************************************************************************************/

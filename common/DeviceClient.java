@@ -59,6 +59,19 @@ public class DeviceClient implements Serializable
 	public void setName(String _nomeClient){nomeClient = _nomeClient;}
 	
 	/****************************************************************************************\
+	|	public void addLogDownload(DeviceClient _client, Resource _risorsa, int _parteRisorsa)
+	|	description: aggiunge un client al log di download di una determinata parte di risorsa
+	\****************************************************************************************/
+	public void addLogDownload(DeviceClient _client, Resource _risorsa, int _parteRisorsa){
+		for(int i=0; i<risorse.size(); i++)
+		{
+			if( risorse.get(i).getName().equals(_risorsa.getName()) &&
+				risorse.get(i).getNparts() == _risorsa.getNparts() )
+					risorse.get(i).addLogDownload(_client, _parteRisorsa);			
+		}
+	}
+	
+	/****************************************************************************************\
 	|	public IClient getRef()
 	|	description: restituisce il riferimento del client
 	\****************************************************************************************/

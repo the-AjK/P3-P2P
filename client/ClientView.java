@@ -76,7 +76,7 @@ public class ClientView implements java.util.Observer
 		//ora le varie aree di testo
 		files = new JTextArea();
 		JScrollPane filesList = new JScrollPane(files);
-		filesList.setBorder(BorderFactory.createTitledBorder("File completi"));
+		filesList.setBorder(BorderFactory.createTitledBorder("File completi - log download"));
 		fileStatusP.add(filesList);		
 		
 		downloadQueue = new JTextArea();

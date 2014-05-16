@@ -301,7 +301,8 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 						{
 							model.addLogText("[download_T] download risorsa " + risorsa.getName() + " " + risorsa.getNparts() + " terminato!");
 							//sposto la nuova risorsa completa sulla lista delle mie risorse
-							sleep(3000);
+							//aspetto un po' prima di spostare la risorsa
+							sleep(DOWNLOAD_TIMEOUT);
 							synchronized(model)
 							{
 								model.addResource(risorsa);
@@ -804,6 +805,9 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 					sleep(DOWNLOAD_TIMEOUT);									//simulo l'upload
 					if(_client.getRef().downloadStop(_risorsa,_parte,_client))
 					{
+						//aggiorno la mia lista risorse riempiendo il log download di questa
+						//determinata parte che ho scaricato
+						model.addLogDownload(_client, _risorsa, _parte);
 						model.addLogText("[upload_T] upload " + _risorsa.getName() + "." + _parte + " al client " + _client.getName() + " completato!");
 					}else{
 						model.addLogText("[upload_T] impossibile completare l'upload " + _risorsa.getName() + "." + _parte + " al client " + _client.getName() + "!");
