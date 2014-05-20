@@ -30,6 +30,11 @@ public class ServerModel extends java.util.Observable
 	private Color coloreLog;				//colore testo della casella log
 	private String animationIcon;			//piccola icona di animazione per visualizzare lo stato del client
 	
+	//lock
+	private Object log_lock;
+	private Object clients_lock;
+	private Object servers_lock;
+	
 	/****************************************************************************************\
 	|	public ServerModel()
 	|	description: costruttore del model
@@ -41,6 +46,9 @@ public class ServerModel extends java.util.Observable
 		clients = new Vector<DeviceClient>();
 		servers = new Vector<DeviceServer>();
 		log = new Vector<String>();
+		log_lock = new Object();
+		clients_lock = new Object();
+		servers_lock = new Object();
 		log.add("  ______  ______          ______  ______  ______ ");  
 		log.add(" |   __ \\|__    | ______ |   __ \\|__    ||   __ \\"); 
 		log.add(" |    __/|__    ||______||    __/|    __||    __/"); 
@@ -98,13 +106,25 @@ public class ServerModel extends java.util.Observable
 	|	public int getNclients()
 	|	description: restituisce il numero di client connessi al server
 	\****************************************************************************************/
-	public int getNclients(){return clients.size();}
+	public int getNclients()
+	{
+		synchronized(clients_lock)
+		{
+			return clients.size();
+		}
+	}
 	
 	/****************************************************************************************\
 	|	public int getNservers()
 	|	description: restituisce il numero di server connessi
 	\****************************************************************************************/
-	public int getNservers(){return servers.size();}
+	public int getNservers()
+	{
+		synchronized(servers_lock)
+		{
+			return servers.size();
+		}
+	}
 	
 	/****************************************************************************************\
 	|	public Vector<DeviceServer> getServerList()
@@ -124,14 +144,17 @@ public class ServerModel extends java.util.Observable
 	\****************************************************************************************/	
 	public void removeServer(String _server2remove)
 	{
-		for(int i=0; i<servers.size(); i++)
+		synchronized(servers_lock)
 		{
-			if(servers.get(i).getName().equals(_server2remove))
+			for(int i=0; i<servers.size(); i++)
 			{
-				servers.remove(i);
-				break;
-			}		
-		}	
+				if(servers.get(i).getName().equals(_server2remove))
+				{
+					servers.remove(i);
+					break;
+				}		
+			}	
+		}
 		viewRefresh();
 	}
 	
@@ -141,14 +164,17 @@ public class ServerModel extends java.util.Observable
 	\****************************************************************************************/
 	public void removeClient(String _client2remove)
 	{
-		for(int i=0; i<clients.size(); i++)
+		synchronized(clients_lock)
 		{
-			if(clients.get(i).getName().equals(_client2remove))
+			for(int i=0; i<clients.size(); i++)
 			{
-				clients.remove(i);
-				break;
-			}		
-		}	
+				if(clients.get(i).getName().equals(_client2remove))
+				{
+					clients.remove(i);
+					break;
+				}		
+			}	
+		}
 		viewRefresh();
 	}
 	
@@ -162,17 +188,20 @@ public class ServerModel extends java.util.Observable
 		Resource risorsa;
 		DeviceClient client;
 		
-		for(int i=0; i<clients.size(); i++)		//scorro la lista di clients
+		synchronized(clients_lock)
 		{
-			client = clients.get(i);
-			for(int j=0; j<client.getNresource(); j++) //scorro la lista delle risorse
+			for(int i=0; i<clients.size(); i++)		//scorro la lista di clients
 			{
-				risorsa = client.getResource(j);
-				if(risorsa.getName().equals(_risorsa.getName()) &&
-					risorsa.getNparts() == _risorsa.getNparts() )
+				client = clients.get(i);
+				for(int j=0; j<client.getNresource(); j++) //scorro la lista delle risorse
 				{
-					res.add(client);	//aggiungo il client che possiede la risorsa
-					break;
+					risorsa = client.getResource(j);
+					if(risorsa.getName().equals(_risorsa.getName()) &&
+						risorsa.getNparts() == _risorsa.getNparts() )
+					{
+						res.add(client);	//aggiungo il client che possiede la risorsa
+						break;
+					}
 				}
 			}
 		}
@@ -185,12 +214,10 @@ public class ServerModel extends java.util.Observable
 	\****************************************************************************************/
 	public DeviceServer getServer(int _n)
 	{
-		if(_n < servers.size())
+		synchronized(servers_lock)
 		{
 			return servers.get(_n);
-		}else{
-			return null;
-		}	
+		}
 	}
 	
 	/****************************************************************************************\
@@ -199,9 +226,12 @@ public class ServerModel extends java.util.Observable
 	\****************************************************************************************/
 	public boolean serverIsHere(String _serverName)
 	{
-		for(int i=0; i<servers.size(); i++)
+		synchronized(servers_lock)
 		{
-			if(servers.get(i).getName().equals(_serverName))return true;
+			for(int i=0; i<servers.size(); i++)
+			{
+				if(servers.get(i).getName().equals(_serverName))return true;
+			}
 		}
 		return false;
 	}
@@ -212,12 +242,10 @@ public class ServerModel extends java.util.Observable
 	\****************************************************************************************/
 	public DeviceClient getClient(int _n)
 	{
-		if(_n < clients.size())
+		synchronized(clients_lock)
 		{
 			return clients.get(_n);
-		}else{
-			return null;
-		}	
+		}
 	}	
 	
 	/****************************************************************************************\
@@ -226,9 +254,12 @@ public class ServerModel extends java.util.Observable
 	\****************************************************************************************/
 	public boolean clientIsHere(String _clientName)
 	{
-		for(int i=0; i<clients.size(); i++)
+		synchronized(clients_lock)
 		{
-			if(clients.get(i).getName().equals(_clientName))return true;
+			for(int i=0; i<clients.size(); i++)
+			{
+				if(clients.get(i).getName().equals(_clientName))return true;
+			}
 		}
 		return false;
 	}
@@ -265,15 +296,18 @@ public class ServerModel extends java.util.Observable
 	{
 		String res = "";
 		
-		for(int i=0; i<clients.size(); i++)
+		synchronized(clients_lock)
 		{
-			res = res + clients.get(i).getName() + " - [ R: {";
-			for(int j=0; j<clients.get(i).getNresource(); j++)
+			for(int i=0; i<clients.size(); i++)
 			{
-				if(j!=0)res = res + ",";
-				res = res + clients.get(i).getResource(j).getName() + clients.get(i).getResource(j).getNparts();
+				res = res + clients.get(i).getName() + " - [ R: {";
+				for(int j=0; j<clients.get(i).getNresource(); j++)
+				{
+					if(j!=0)res = res + ",";
+					res = res + clients.get(i).getResource(j).getName() + clients.get(i).getResource(j).getNparts();
+				}
+				res = res + "} ]\n";
 			}
-			res = res + "} ]\n";
 		}
 		return res;
 	}	
@@ -285,9 +319,12 @@ public class ServerModel extends java.util.Observable
 	public String getServersText()
 	{
 		String res = "";
-		for(int i=0; i<servers.size(); i++)
+		synchronized(servers_lock)
 		{
-			res = res + servers.get(i).getName() + "\n";
+			for(int i=0; i<servers.size(); i++)
+			{
+				res = res + servers.get(i).getName() + "\n";
+			}
 		}
 		return res;
 	}
@@ -304,7 +341,10 @@ public class ServerModel extends java.util.Observable
 	\****************************************************************************************/
 	public void addServer(String _nomeServer, IServer _ref)
 	{
-		servers.add(new DeviceServer(_nomeServer,_ref)); 
+		synchronized(servers_lock)
+		{
+			servers.add(new DeviceServer(_nomeServer,_ref));
+		}
 		viewRefresh();
 	}
 	
@@ -314,7 +354,10 @@ public class ServerModel extends java.util.Observable
 	\****************************************************************************************/
 	public void addClient(String _nomeClient, IClient _ref, Vector<Resource> _listaRisorse)
 	{
-		clients.add(new DeviceClient(_nomeClient,_ref,_listaRisorse));
+		synchronized(clients_lock)
+		{
+			clients.add(new DeviceClient(_nomeClient,_ref,_listaRisorse));
+		}
 		viewRefresh();
 	}
 	
@@ -326,19 +369,22 @@ public class ServerModel extends java.util.Observable
 	{
 		boolean trovato = false;
 		int i;
-		for(i=0; i<clients.size(); i++)
+		synchronized(clients_lock)
 		{
-			if(clients.get(i).getName().equals(_nomeClient))
+			for(i=0; i<clients.size(); i++)
 			{
-				trovato = true;
-				break;
+				if(clients.get(i).getName().equals(_nomeClient))
+				{
+					trovato = true;
+					break;
+				}
+			}
+			if(trovato)
+			{
+				clients.get(i).setResourceList(_listaRisorse);
 			}
 		}
-		if(trovato)
-		{
-			clients.get(i).setResourceList(_listaRisorse);
-			viewRefresh();
-		}
+		if(trovato)viewRefresh();
 	}
 	
 	/****************************************************************************************\
@@ -347,7 +393,10 @@ public class ServerModel extends java.util.Observable
 	\****************************************************************************************/
 	public int addLogText(String _logLine)
 	{
-		log.add(_logLine);
+		synchronized(log_lock)
+		{
+			log.add(_logLine);
+		}
 		viewRefresh();
 		return log.size() - 1;
 	}
@@ -358,11 +407,11 @@ public class ServerModel extends java.util.Observable
 	\****************************************************************************************/
 	public void addLogTextToLine(int pos, String _logText)
 	{
-		if(pos < log.size())
+		synchronized(log_lock)
 		{
 			log.setElementAt(log.get(pos) + _logText, pos);
-			viewRefresh();
 		}
+		viewRefresh();
 	}
 	
 	/****************************************************************************************\
@@ -371,11 +420,11 @@ public class ServerModel extends java.util.Observable
 	\****************************************************************************************/
 	public void setLogText(int pos, String _logLine)
 	{
-		if(pos < log.size())
+		synchronized(log_lock)
 		{
 			log.setElementAt(_logLine, pos);
-			viewRefresh();
 		}
+		viewRefresh();
 	}
 	
 	/****************************************************************************************\

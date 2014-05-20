@@ -4,7 +4,9 @@ BUGS/TODOS:
 - avviare i suddetti thread quando mi connetto ad un server
 - tenere traccia di tutti i threads per interromperli?
 
-- aggiungere alle parti di risorse locali, i clients che hanno scaricato tale parti. (al termine dell'upload, aggiorno la risorsa che ho inviato)
+DONE- aggiungere alle parti di risorse locali, i clients che hanno scaricato tale parti. (al termine dell'upload, aggiorno la risorsa che ho inviato)
  quindi mi server un oggetto DeviceClient, la richiesta di download quindi dovrebbe avere come parametro "model.me" come campo mittente.
  
  
+-in lab informatica all'avvio vengono inseriti nella lista "serverconnessi" i nomi dei server due volte! su windows non capita
+ (controllo nell'inserimento ?) i log sembrano ok.

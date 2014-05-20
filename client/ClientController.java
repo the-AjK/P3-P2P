@@ -29,13 +29,13 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 {
 	//impostazioni modificabili
 	private static final String HOST = "localhost:1099";					//host per la connessione RMI
-	private static final int DOWNLOAD_TIMEOUT = 7000;						//tempo per simulare il download di una parte di risorsa
+	private static final int DOWNLOAD_TIMEOUT = 3000;						//tempo per simulare il download di una parte di risorsa
 	private static final boolean VERBOSE_LOG = true;						//se true visualizza piu' messaggi di log
 	
 	
 	//impostazioni NON modificabili
 	private static final int CHECKCONNECTIONS_TIMEOUT = 3000;				//timeout per controllo connessione in background
-	private static final int CHECKDOWNLOADQUEUE_TIMEOUT = 2000;				//timeout per controllo coda download
+	private static final int CHECKDOWNLOADQUEUE_TIMEOUT = 500;				//timeout per controllo coda download
 	private static final boolean RESOURCE_EMPTY = false;					//risorsa vuota
 	private static final boolean RESOURCE_FULL = true;						//risorsa completa
 	private static final String RMITAG = "P3-P2P-JK"; 						//chiave identificativa per il registro RMI
@@ -241,10 +241,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 				
 				if(listaClient.size() > 0) //se esiste almeno un client che possiede la risorsa aggiungo in coda download
 				{
-					//synchronized(model)
-					{ 
-						model.addResourceToDownloadQueue(risorsaDaCercare, listaClient);
-					}				
+					model.addResourceToDownloadQueue(risorsaDaCercare, listaClient);			
 					model.addLogText("[ricerca_T] risorsa " + risorsaDaCercare.getName() + " " + risorsaDaCercare.getNparts() + " aggiunta in coda download!");	
 					view.setFindText(""); //ora che la risorsa e' stata aggiunta svuoto il campo di testo
 				}else{
@@ -263,16 +260,57 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 	\****************************************************************************************/
 	private class DownloadManagerThread extends Thread
 	{
-		private Object lock;
 		private int activeDownloads;				//numero di download attivi
 		private Vector<DeviceClient> activeClients;	//lista di clients attivi (in upload)
+		private Object downloadManager_lock;
+		
 		
 		public DownloadManagerThread()
 		{
 			super(DOWNLOADMANAGER_THREAD);
-			lock = new Object();
+			downloadManager_lock = new Object();
 			activeDownloads = 0;
 			activeClients = new Vector<DeviceClient>();
+		}
+		
+		//restituisce un client random, disponibile per il download
+		private int getRandomClient(Vector<DeviceClient> _listaClient)
+		{
+			int nclients = _listaClient.size();
+			int clientPos = -1;
+	
+			synchronized(downloadManager_lock)
+			{
+				for(int i=0; i<_listaClient.size(); i++)
+				{
+					if(!activeClients.contains(_listaClient.get(i)))
+					{
+						clientPos = i;
+						break;
+					}				
+				}
+			}
+			return clientPos;
+		}
+		
+		//restituisce una parte random che deve essere ancora scaricata
+		private int getRandomParte(Resource _risorsa)
+		{
+			int parteVuota = -1;
+			synchronized(_risorsa)
+			{
+				int nparti = _risorsa.getNparts(); //numero parti della risorsa
+				for(int i=0; i<100; i++)
+				{
+					int parte = randInt(0, nparti - 1);		//prendo una parte random
+					if(!_risorsa.isPartFull(parte) && !_risorsa.isPartInDownload(parte))
+					{	
+						parteVuota = parte;
+						break; //se la parte è vuota esco
+					}
+				}
+			}
+			return parteVuota;
 		}
 		
 		public void run()
@@ -287,66 +325,65 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 				
 					sleep(CHECKDOWNLOADQUEUE_TIMEOUT);
 					
-					//synchronized(model)
-					//{ 
 					//scorro la lista delle risorse in download per vedere se ci sono parti da scaricare
-					for(int i=0; i<model.getNdownloadQueue(); i++)
+					//synchronized(model.getDownloadQueue())
 					{
-						//if(Thread.currentThread().isInterrupted())break;
-						
-						//synchronized(lock)
+						for(int i=0; i<model.getNdownloadQueue(); i++)
 						{
-						risorsa = model.getResourceInDownload(i); 				//prendo la risorsa
-						if(risorsa.isFull())
-						{
-							model.addLogText("[download_T] download risorsa " + risorsa.getName() + " " + risorsa.getNparts() + " terminato!");
-							//sposto la nuova risorsa completa sulla lista delle mie risorse
-							//aspetto un po' prima di spostare la risorsa
-							sleep(DOWNLOAD_TIMEOUT);
-							synchronized(model)
+							if(Thread.currentThread().isInterrupted())break;
+							
+							risorsa = model.getResourceInDownload(i); 				//prendo la risorsa
+							if(risorsa.isFull())
 							{
+								model.addLogText("[download_T] download risorsa " + risorsa.getName() + " " + risorsa.getNparts() + " terminato!");
+								//sposto la nuova risorsa completa sulla lista delle mie risorse
+								//aspetto un po' prima di spostare la risorsa
+								sleep(DOWNLOAD_TIMEOUT);
 								model.addResource(risorsa);
 								model.removeResourceInDownload(i);	//rimuovo la risorsa dalla coda download
-							}							
-							if(VERBOSE_LOG)
-								model.addLogText("[download_T] comunico nuova lista risorse al server " + model.getServer2Connect());
-							try{
-								IServer ref = (IServer) Naming.lookup("rmi://" + HOST + "/" + RMITAG + "/" + model.getServer2Connect());
-								ref.connectMEClient(model.getClientName(),model.getClientRef());
-							}catch(Exception e){
+													
 								if(VERBOSE_LOG)
-									model.addLogText("[download_T] comunicazione nuova lista fallita!");
-							}						
-						}else{
-							//se la risorsa ha ancora parti da scaricare...
-							//prendo la lista di clients che possiedono tale risorsa
-							listaClient = model.getDownloadClientListForResource(i);
-							int parte;
-							int clientPos;
-							synchronized(lock)
-						    {
-							if(activeDownloads < model.getDownloadCapacity() &&
-								listaClient.size() > activeClients.size()	)//vedo se posso scaricare
-							{
-								do{
-									clientPos = randInt(0, listaClient.size() - 1);
-									client = listaClient.get(clientPos);					//prendo un client random
-								}while(activeClients.contains(client));						//che non sia attivo 								
-								do{
-									parte = randInt(0, risorsa.getNparts() - 1);			//prendo una parte random
-								}while(risorsa.isPartFull(parte) || 
-									   risorsa.isPartInDownload(parte) );					//esco se la parte e' vuota
-								risorsa.setPartInDownload(parte);							//setto come in download
-								activeDownloads++;
-								activeClients.add(client);
-								//avvio un thread di download per la parte di risorsa
-								(new DownloadResourcePartThread(risorsa, parte, listaClient, clientPos)).start();						
-							}	
-							}
-							}
-						}	//synch(lock)				
-					}//end for
-					//}//end synchronized(model)
+									model.addLogText("[download_T] comunico nuova lista risorse al server " + model.getServer2Connect());
+								try{
+									IServer ref = (IServer) Naming.lookup("rmi://" + HOST + "/" + RMITAG + "/" + model.getServer2Connect());
+									ref.connectMEClient(model.getClientName(),model.getClientRef());
+								}catch(Exception e){
+									if(VERBOSE_LOG)
+										model.addLogText("[download_T] comunicazione nuova lista fallita!");
+								}						
+							}else{
+								//se la risorsa ha ancora parti da scaricare...
+								//prendo la lista di clients che possiedono tale risorsa
+								listaClient = model.getDownloadClientListForResource(i);
+								int parte;
+								int clientPos;
+								
+								synchronized(downloadManager_lock)
+								{
+									if(activeDownloads < model.getDownloadCapacity() &&
+										listaClient.size() > activeClients.size()	)	//vedo se posso scaricare
+									{
+										synchronized(risorsa)
+										{
+											parte = getRandomParte(risorsa);
+											clientPos = getRandomClient(listaClient); 		//prendo un client random
+											if(clientPos >= 0 && parte>=0)
+											{
+												client = listaClient.get(clientPos);
+												risorsa.setPartInDownload(parte);							//setto come in download
+												activeDownloads++;
+												activeClients.add(client);
+												//avvio un thread di download per la parte di risorsa
+												(new DownloadResourcePartThread(risorsa, parte, listaClient, clientPos)).start();						
+											}
+										}
+									}else{
+										//model.addLogText("[download_T] limite download raggiunto, in attesa...");
+									}
+								}//end synch
+							} //end if	
+						}//end for
+					}//synch download queue
 				}//end while( !Thread.currentThread().isInterrupted() )	
 			}catch(InterruptedException ie){
 				model.addLogText("[download_T] interrupted exception!");
@@ -400,11 +437,11 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 					}catch(RemoteException re){
 						model.addLogText("[downloadP_T] client " + client.getName() + " offline, download " + risorsa.getName() + "." + parte + " interrotto!");
 						//il client non e' raggiungibile, quindi lo elimino dalla lista client
-						synchronized(lock)
+						synchronized(downloadManager_lock)
 						{
-						risorsa.setPartEmpty(parte);	//reimposto la risorsa come vuota
-						activeClients.remove(client);
-						listaClient.remove(clientPos);
+							risorsa.setPartEmpty(parte);	//reimposto la risorsa come vuota
+							activeClients.remove(client);
+							listaClient.remove(clientPos);
 						}
 					}		
 					
@@ -413,9 +450,12 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 					
 					//TODO discriminare se l'interruzione è avvenuta a causa di downloadStop oppure a causa di una disconnessione manuale
 					model.addLogText("[downloadP_T] download " + risorsa.getName() + "." + parte + " completato!");
-					risorsa.setPartFull(parte);				//setto la parte come completata
-					activeClients.remove(client);
-					activeDownloads--;
+					synchronized(downloadManager_lock)
+					{
+						risorsa.setPartFull(parte);				//setto la parte come completata
+						activeClients.remove(client);
+						activeDownloads--;
+					}
 				}
 				catch(Exception e){
 					model.addLogText("[downloadP_T] interrupted exception durante attesa lock!");
@@ -525,6 +565,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 	{
 		if(_e.getActionCommand().equals(FIND_BUTTON_TEXT))
 		{
+			model.setFindBenabled(false);							  //disabilito la ricerca
 			String textArea = view.getFindText().toLowerCase() + " "; //recupero la stringa cercata dalla view con sentinella finale
 				
 			int firstChar = 0;
@@ -586,6 +627,8 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 					
 			//ora che tutto torna creo il thread di ricerca, lo avvio ed esco!
 			(new RicercaRisorsaThread(nomeRisorsa,partiRisorsa)).start();
+			
+			model.setFindBenabled(true);							  //ri-abilito la ricerca
 		
 		}
 		else if(_e.getActionCommand().equals(CONNECT_BUTTON_TEXT))

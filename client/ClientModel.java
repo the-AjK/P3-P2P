@@ -32,6 +32,11 @@ public class ClientModel extends java.util.Observable
 	private Vector<ResourceDownloadQueue> downloadQueue;	//lista di risorse in fase di download
 	private String animationIcon;							//piccola icona di animazione per visualizzare lo stato del client
 	
+	//lock espliciti per la lista log, la coda download e della mia lista risorse
+	private Object log_lock;
+	private Object downloadQueue_lock;
+	private Object risorse_lock;
+	
 	private class ResourceDownloadQueue
 	{
 		public Resource risorsa;							//risorsa in download
@@ -40,16 +45,7 @@ public class ClientModel extends java.util.Observable
 		{
 			risorsa = _risorsa;
 			listaClient = _listaClient;
-		}	
-		
-		/****************************************************************************************\
-		|	public void removeClient(String _nomeClient)
-		|	description: rimuove un client dalla listaClient che possiedono una risorsa
-		\****************************************************************************************/
-		public void removeClient(String _nomeClient)
-		{
-		
-		}
+		}			
 	}
 	
 	/****************************************************************************************\
@@ -64,6 +60,11 @@ public class ClientModel extends java.util.Observable
 		downloadCapacity = 0;
 		downloadQueue = new Vector<ResourceDownloadQueue>();
 		log = new Vector<String>();
+		//inizializzo i lock
+		log_lock = new Object();
+		downloadQueue_lock = new Object();
+		risorse_lock = new Object();
+		
 		log.add("  ______  ______          ______  ______  ______ ");  
 		log.add(" |   __ \\|__    | ______ |   __ \\|__    ||   __ \\"); 
 		log.add(" |    __/|__    ||______||    __/|    __||    __/"); 
@@ -138,7 +139,10 @@ public class ClientModel extends java.util.Observable
 	|	description: aggiunge un client al log di download di una determinata parte di risorsa
 	\****************************************************************************************/
 	public void addLogDownload(DeviceClient _client, Resource _risorsa, int _parteRisorsa){
-		me.addLogDownload(_client, _risorsa, _parteRisorsa);
+		synchronized(risorse_lock)
+		{
+			me.addLogDownload(_client, _risorsa, _parteRisorsa);
+		}
 	}
 	
 	/****************************************************************************************\
@@ -147,80 +151,113 @@ public class ClientModel extends java.util.Observable
 	\****************************************************************************************/
 	public void addResourceToDownloadQueue(Resource _res, Vector<DeviceClient> _listaClient)
 	{
-		downloadQueue.add(new ResourceDownloadQueue(_res,_listaClient));
+		synchronized(downloadQueue_lock)
+		{
+			downloadQueue.add(new ResourceDownloadQueue(_res,_listaClient));
+		}
 		viewRefresh();
+	}
+	
+	/****************************************************************************************\
+	|	public Vector<ResourceDownloadQueue> getDownloadQueue()
+	|	description: restituisce la coda di download
+	\****************************************************************************************/
+	public Vector<ResourceDownloadQueue> getDownloadQueue()
+	{
+		Vector<ResourceDownloadQueue> coda;
+		synchronized(downloadQueue_lock)
+		{
+			coda = downloadQueue;
+		}
+		return coda;
 	}
 	
 	/****************************************************************************************\
 	|	public int getNdownloadQueue()
 	|	description: restituisce il numero di risorse in download
 	\****************************************************************************************/
-	public int getNdownloadQueue(){return downloadQueue.size();}
-	
+	public int getNdownloadQueue()
+	{
+		int size;
+		synchronized(downloadQueue_lock)
+		{
+			size = downloadQueue.size();
+		}
+		return size;
+	}	
 	
 	/****************************************************************************************\
 	|	public void removeResourceInDownload(int _n)
 	|	description: rimuove una risorsa in download
 	\****************************************************************************************/
-	public void removeResourceInDownload(int _n)
+	public void removeResourceInDownload(int _n) 
 	{
-		downloadQueue.remove(_n);
+		synchronized(downloadQueue_lock)
+		{
+			downloadQueue.remove(_n);
+		}
 	}
 	
 	/****************************************************************************************\
 	|	public int getResourceInDownload()
 	|	description: restituisce la risorsa in download
 	\****************************************************************************************/
-	public Resource getResourceInDownload(int _n)
+	public Resource getResourceInDownload(int _n) 
 	{   
-		if(_n < downloadQueue.size())
+		Resource risorsa;
+		synchronized(downloadQueue_lock)
 		{
-			return downloadQueue.get(_n).risorsa;
+			risorsa = downloadQueue.get(_n).risorsa;
 		}
-		return null;
+		return risorsa;
 	}
 	
 	/****************************************************************************************\
-	|	public Vector<DeviceClient> getDownloadClientListForResource
+	|	public Vector<DeviceClient> getDownloadClientListForResource(int _n)
 	|	description: restituisce la lista di clients per la risorsa in download
 	\****************************************************************************************/
-	public Vector<DeviceClient> getDownloadClientListForResource(int _n)
+	public Vector<DeviceClient> getDownloadClientListForResource(int _n) 
 	{
-		if(_n < downloadQueue.size())
+		 Vector<DeviceClient> list;
+		synchronized(downloadQueue_lock)
 		{
-			return downloadQueue.get(_n).listaClient;
+			list = downloadQueue.get(_n).listaClient;
 		}
-		return null;
+		return list;
 	}
 	
 	/****************************************************************************************\
 	|	public String getDownloadQueueText()
 	|	description: restituisce la lista di risorse in download in formato stringa per la GUI
 	\****************************************************************************************/
-	public String getDownloadQueueText()
+	public String getDownloadQueueText() 
 	{
 		String res = "[ limite parti in download = " + downloadCapacity + " ]\n\n";
 		Integer nparti=0;
-		for(int i=0; i<downloadQueue.size(); i++)
+		
+		synchronized(downloadQueue_lock)
 		{
-			nparti = downloadQueue.get(i).risorsa.getNparts();
-			res = res + "risorsa [" + downloadQueue.get(i).risorsa.getName() + " " + nparti + "] {\n";
-			
-			for(int j=0; j<nparti; j++)
+			for(int i=0; i<downloadQueue.size(); i++)
 			{
-				res = res + "   |--> pt." + j + " ";
+				nparti = downloadQueue.get(i).risorsa.getNparts();
+				res = res + "risorsa [" + downloadQueue.get(i).risorsa.getName() + " " + nparti + "] {\n";
 				
-				if(downloadQueue.get(i).risorsa.isPartEmpty(j)){
-					res = res + "_ \n";
-				}else if(downloadQueue.get(i).risorsa.isPartInDownload(j)){
-					res = res + "[ ] in download...\n";
-				}else if(downloadQueue.get(i).risorsa.isPartFull(j)){
-					res = res + "[*] done!\n";
-				}else{
-					res = res + "--- \n";  //unknow status ! :(
+				for(int j=0; j<nparti; j++)
+				{
+					res = res + "   |--> pt." + j + " ";
+					
+					if(downloadQueue.get(i).risorsa.isPartEmpty(j)){
+						res = res + "_ \n";
+					}else if(downloadQueue.get(i).risorsa.isPartInDownload(j)){
+						res = res + "[ ] in download...\n";
+					}else if(downloadQueue.get(i).risorsa.isPartFull(j)){
+						res = res + "[*] done!\n";
+					}else{
+						res = res + "--- \n";  //unknow status ! :(
+					}
 				}
+				res = res + "}\n\n";
 			}
-			res = res + "}\n\n";
 		}
 		return res;
 	}
@@ -229,15 +266,19 @@ public class ClientModel extends java.util.Observable
 	|	public boolean resourceIsDownloading(String _nomeRisorsa, int _partiRisorsa)
 	|	description: restituisce true se la risorsa e' nella coda download
 	\****************************************************************************************/
-	public boolean resourceIsDownloading(String _nomeRisorsa, int _partiRisorsa)
+	public boolean resourceIsDownloading(String _nomeRisorsa, int _partiRisorsa) 
 	{
-		for(int i=0; i<downloadQueue.size(); i++)
+		boolean trovato = false;
+		synchronized(downloadQueue_lock)
 		{
-			if(downloadQueue.get(i).risorsa.getName().equals(_nomeRisorsa) &&
-				downloadQueue.get(i).risorsa.getNparts() == _partiRisorsa
-			)return true;
+			for(int i=0; i<downloadQueue.size(); i++)
+			{
+				if(downloadQueue.get(i).risorsa.getName().equals(_nomeRisorsa) &&
+					downloadQueue.get(i).risorsa.getNparts() == _partiRisorsa
+				)trovato = true;
+			}
 		}
-		return false;
+		return trovato;
 	}	
 	
 	/****************************************************************************************\
@@ -246,13 +287,17 @@ public class ClientModel extends java.util.Observable
 	\****************************************************************************************/
 	public boolean resourceIsHere(String _nomeRisorsa, int _partiRisorsa)
 	{
-		for(int i=0; i<me.getNresource(); i++)
+		boolean trovato = false;
+		synchronized(risorse_lock)
 		{
-			if(me.getResource(i).getName().equals(_nomeRisorsa) &&
-				me.getResource(i).getNparts() == _partiRisorsa
-			)return true;
+			for(int i=0; i<me.getNresource(); i++)
+			{
+				if(me.getResource(i).getName().equals(_nomeRisorsa) &&
+					me.getResource(i).getNparts() == _partiRisorsa
+				)trovato = true;
+			}
 		}
-		return false;
+		return trovato;
 	}	
 	
 	/****************************************************************************************\
@@ -264,29 +309,33 @@ public class ClientModel extends java.util.Observable
 		String res = "";
 		int nparti=0;
 		Vector<DeviceClient> clientList;
-		for(int i=0; i<me.getNresource(); i++)
+		
+		synchronized(risorse_lock)
 		{
-			nparti = me.getResource(i).getNparts();
-			boolean primaVolta = true;
-			res = res + "risorsa [" + me.getResource(i).getName() + " " + nparti + "] { ";
-			
-			for(int j=0; j<nparti; j++)
+			for(int i=0; i<me.getNresource(); i++)
 			{
-				clientList = me.getResource(i).getLogDownload(j);
-					if(clientList.size() > 0)
-					{
-					if(primaVolta){res = res + "\n"; primaVolta=false;}
-					res = res + "   |--> pt." + j + " {";
-					//stampo la lista di clients che hanno scaricato questa parte
-					//di risorsa
-					for(int k=0; k<clientList.size(); k++)
-					{
-						res = res + " " + clientList.get(k).getName();
+				nparti = me.getResource(i).getNparts();
+				boolean primaVolta = true;
+				res = res + "risorsa [" + me.getResource(i).getName() + " " + nparti + "] { ";
+				
+				for(int j=0; j<nparti; j++)
+				{
+					clientList = me.getResource(i).getLogDownload(j);
+						if(clientList.size() > 0)
+						{
+						if(primaVolta){res = res + "\n"; primaVolta=false;}
+						res = res + "   |--> pt." + j + " {";
+						//stampo la lista di clients che hanno scaricato questa parte
+						//di risorsa
+						for(int k=0; k<clientList.size(); k++)
+						{
+							res = res + " " + clientList.get(k).getName();
+						}
+						res = res + " }\n";
 					}
-					res = res + " }\n";
-				}
-			}		
-			res = res + "}\n";
+				}		
+				res = res + "}\n";
+			}
 		}
 		return res;
 	}	
@@ -303,7 +352,10 @@ public class ClientModel extends java.util.Observable
 	\****************************************************************************************/
 	public void addResource(Resource _risorsa)
 	{
-		me.addResource(_risorsa);
+		synchronized(risorse_lock)
+		{
+			me.addResource(_risorsa);
+		}
 		viewRefresh();
 	}
 	
@@ -343,12 +395,15 @@ public class ClientModel extends java.util.Observable
 	|	public String getLogText()
 	|	description: restituisce la lista di log sottoforma di unica stringa
 	\****************************************************************************************/
-	public String getLogText()
+	public String getLogText() 
 	{
 		String logText = "";
-		for(int i=0; i<log.size(); i++)
+		synchronized(log_lock)
 		{
-			logText = logText + log.get(i) + "\n";
+			for(int i=0; i<log.size(); i++)
+			{
+				logText = logText + log.get(i) + "\n";
+			}
 		}
 		return logText;
 	}
@@ -357,9 +412,12 @@ public class ClientModel extends java.util.Observable
 	|	public int addLogText(String _logLine)
 	|	description: aggiunge una riga di testo ai log e ritorna la posizione
 	\****************************************************************************************/
-	public int addLogText(String _logLine)
+	public int addLogText(String _logLine) 
 	{
-		log.add(_logLine);
+		synchronized(log_lock)
+		{
+			log.add(_logLine);
+		}
 		viewRefresh();
 		return log.size() - 1;
 	}
@@ -368,26 +426,26 @@ public class ClientModel extends java.util.Observable
 	|	public void addLogTextToLine(int pos, String _logText)
 	|	description: aggiunge del testo nella riga dei log indicata
 	\****************************************************************************************/
-	public void addLogTextToLine(int pos, String _logText)
+	public void addLogTextToLine(int pos, String _logText) 
 	{
-		if(pos < log.size())
+		synchronized(log_lock)
 		{
 			log.setElementAt(log.get(pos) + _logText, pos);
-			viewRefresh();
 		}
+		viewRefresh();
 	}
 	
 	/****************************************************************************************\
 	|	public void setLogText(int pos, String _logLine)
 	|	description: sovrascrive un log precedente nella posizione indicata
 	\****************************************************************************************/
-	public void setLogText(int pos, String _logLine)
+	public void setLogText(int pos, String _logLine) 
 	{
-		if(pos < log.size())
+		synchronized(log_lock)
 		{
 			log.setElementAt(_logLine, pos);
-			viewRefresh();
 		}
+		viewRefresh();
 	}
 	
 	/****************************************************************************************\

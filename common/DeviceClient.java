@@ -62,7 +62,8 @@ public class DeviceClient implements Serializable
 	|	public void addLogDownload(DeviceClient _client, Resource _risorsa, int _parteRisorsa)
 	|	description: aggiunge un client al log di download di una determinata parte di risorsa
 	\****************************************************************************************/
-	public void addLogDownload(DeviceClient _client, Resource _risorsa, int _parteRisorsa){
+	synchronized public void addLogDownload(DeviceClient _client, Resource _risorsa, int _parteRisorsa)
+	{
 		for(int i=0; i<risorse.size(); i++)
 		{
 			if( risorse.get(i).getName().equals(_risorsa.getName()) &&
@@ -95,12 +96,7 @@ public class DeviceClient implements Serializable
 	\****************************************************************************************/
 	public Resource getResource(int _nrisorsa)
 	{
-		if(_nrisorsa < risorse.size())
-		{
-			return risorse.get(_nrisorsa);
-		}else{
-			return null;
-		}
+		return risorse.get(_nrisorsa);
 	}
 	
 	/****************************************************************************************\

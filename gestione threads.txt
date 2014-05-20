@@ -1,0 +1,17 @@
+client threads:
+
+- addLogText da mettere synchronized?
+
+CheckConnectionsThread (unico)
+ -
+ 
+ RicercaRisorsaThread (avviato ad ogni ricerca)
+- addResourceToDownloadQueue (si puo mettere synch al metodo, cmq la pressione multipla del pulsante è evitata dal 
+programma stesso)
+
+
+DownloadManagerThread (unico)
+	-downloadQueue. scorre e modifica la coda in download...
+	-getResourceList() modifica la propria lista delle risorse
+	
+DownloadResourcePartThread (multiplo)
