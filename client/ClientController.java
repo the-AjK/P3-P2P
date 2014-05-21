@@ -835,7 +835,6 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 	\****************************************************************************************/
 	public void findResourceForClient_answer(Resource _risorsa, Vector<DeviceClient> _clientList) throws RemoteException
 	{
-		model.addLogText("ricevo......");
 		if(VERBOSE_LOG)	//stampo la lista di clients che hanno la risorsa cercata
 			for(int i=0; i<_clientList.size(); i++)
 				model.addLogText("[ricerca_T] il client " + _clientList.get(i).getName() + " ha la risorsa " + _risorsa.getName() + " " + _risorsa.getNparts());	

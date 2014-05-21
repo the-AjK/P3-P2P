@@ -45,7 +45,7 @@ public class ServerModel extends java.util.Observable
 	{
 		public DeviceClient client;
 		public Resource risorsa;
-		public Vector<DeviceClient> clientList;
+		public Vector<DeviceClient> clientList = new Vector<DeviceClient>();
 		public int numberOfRequests;
 		
 		public ResearchRequest(DeviceClient _client, Resource _risorsa)
@@ -282,7 +282,7 @@ public class ServerModel extends java.util.Observable
 					researchRequest.get(i).risorsa.getName().equals(_risorsa.getName()) &&
 					researchRequest.get(i).risorsa.getNparts() == _risorsa.getNparts()
 				){
-					clients = researchRequest.get(i).clientList;
+					clients.addAll(researchRequest.get(i).clientList);
 					break;
 				}
 			}	
