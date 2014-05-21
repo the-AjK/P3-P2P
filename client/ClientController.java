@@ -21,6 +21,7 @@ import java.util.Set;
 import java.awt.Color;
 import common.Resource;
 import common.DeviceClient;
+import common.DeviceServer;
 import server.IServer;
 import java.io.Serializable;
 import java.util.Random;
@@ -48,6 +49,8 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 	private static final String DOWNLOADMANAGER_THREAD = "DownloadManagerThread";
 	private static final String DOWNLOADRESOURCEPART_THREAD = "DownloadResourcePartThread";
 	private static final String UPLOADRESOURCEPART_THREAD = "UploadResourcePartThread";
+	
+	private boolean SERVER_OK = false;	//FLAG status del mio server
 	
 	//gestione numero random per il thread download
 	private Random rand;
@@ -107,7 +110,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 		{
 			boolean FIRST_TIME = true;	//FLAG attivo solamente al primo avvio del client
 			boolean RMI_OK = false;		//FLAG che indica lo stato della connessione al registro RMI
-			boolean SERVER_OK = false;	//FLAG status del mio server
+			SERVER_OK = false;			//FLAG status del mio server
 			IServer ref;				//riferimento remoto del mio server
 			String[] animIcon = {"PSP","P2P"};
 			model.addLogText("[check_T] connessione automatica avviata...");
@@ -142,7 +145,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 								if(!SERVER_OK || FIRST_TIME)
 								{
 									model.addLogText("[check_T] il server " + model.getServer2Connect() + " e' online!");
-									SERVER_OK = connectToServer();				//mi connetto al server in automatico
+									connectToServer();				//mi connetto al server in automatico
 								}
 							}
 						}catch(Exception ee){
@@ -218,35 +221,19 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 	{
 		//campi dati
 		private Resource risorsaDaCercare;
-		private Vector<DeviceClient> listaClient;
 		
 		public RicercaRisorsaThread(String _nomeRisorsa, int _partiRisorsa)
 		{
 			super(RICERCARISORSA_THREAD + "_" + _nomeRisorsa + "_" + _partiRisorsa);
 			risorsaDaCercare = new Resource(_nomeRisorsa, _partiRisorsa, RESOURCE_EMPTY);
-			listaClient = new Vector<DeviceClient>(); //lista di clients che hanno la risorsa 
 		}
 		
 		public void run()
 		{
 			model.addLogText("[ricerca_T] ricerca risorsa " + risorsaDaCercare.getName() + " " + risorsaDaCercare.getNparts() + " in corso...");	
-			
 			try{
 				IServer ref = (IServer) Naming.lookup("rmi://" + HOST + "/" + RMITAG + "/" + model.getServer2Connect());
-				listaClient = ref.findResourceForClient(model.getClientName(),risorsaDaCercare);	//richiamo il metodo remoto per inoltrare la richiesta al server
-				
-				if(VERBOSE_LOG)	//stampo la lista di clients che hanno la risorsa cercata
-					for(int i=0; i<listaClient.size(); i++)
-						model.addLogText("[ricerca_T] il client " + listaClient.get(i).getName() + " ha la risorsa " + risorsaDaCercare.getName() + " " + risorsaDaCercare.getNparts());	
-				
-				if(listaClient.size() > 0) //se esiste almeno un client che possiede la risorsa aggiungo in coda download
-				{
-					model.addResourceToDownloadQueue(risorsaDaCercare, listaClient);			
-					model.addLogText("[ricerca_T] risorsa " + risorsaDaCercare.getName() + " " + risorsaDaCercare.getNparts() + " aggiunta in coda download!");	
-					view.setFindText(""); //ora che la risorsa e' stata aggiunta svuoto il campo di testo
-				}else{
-					model.addLogText("[ricerca_T] risorsa " + risorsaDaCercare.getName() + " " + risorsaDaCercare.getNparts() + " non trovata!");
-				}
+				ref.findResourceForClient(model.me(), risorsaDaCercare);	//richiamo il metodo remoto per inoltrare la richiesta al server
 			}catch(Exception e){
 				model.addLogText("[ricerca_T] impossibile comunicare con il server!");
 			}							
@@ -346,7 +333,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 									model.addLogText("[download_T] comunico nuova lista risorse al server " + model.getServer2Connect());
 								try{
 									IServer ref = (IServer) Naming.lookup("rmi://" + HOST + "/" + RMITAG + "/" + model.getServer2Connect());
-									ref.connectMEClient(model.getClientName(),model.getClientRef());
+									ref.connectMEClient(model.me());
 								}catch(Exception e){
 									if(VERBOSE_LOG)
 										model.addLogText("[download_T] comunicazione nuova lista fallita!");
@@ -421,11 +408,10 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 			{
 				try{
 					
-					
 					model.addLogText("[downloadP_T] avvio download " + risorsa.getName() + "." + parte + " dal client " + client.getName());
 											
 					try{
-						if(client.getRef().downloadStart(risorsa, parte, model.getMe()))	//richiedo il download
+						if(client.getRef().downloadStart(risorsa, parte, model.me()))	//richiedo il download
 						{
 							sleep(DOWNLOAD_TIMEOUT * 3);		//timeout download, spero di essere interrotto prima di finire il tempo					
 							model.addLogText("[downloadP_T] timeout! download " + risorsa.getName() + "." + parte + " fallito!");
@@ -659,38 +645,23 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 	}
 	
 	/****************************************************************************************\
-	|	private boolean connectToServer()
-	|	description: si connette al server, restituisce true se la connessione va a buon fine
+	|	private void connectToServer()
+	|	description: si connette al server
 	\****************************************************************************************/
-	private boolean connectToServer()
+	private void connectToServer()
 	{
-		boolean CONNECT_OK = false;
-				
 		synchronized(model.getDisconnectBtext()) //prendo il lock sui dati per modificare i pulsanti
 		{
 			model.setDisconnectBenabled(false);								//disabilito il pulsante
 			model.setDisconnectBtext(CONNECTION_BUTTON_TEXT);				//cambio il testo
-			int logPos = model.addLogText("connessione al server " + model.getServer2Connect() + "...");
+			int logPos = model.addLogText("invio richiesta connessione al server " + model.getServer2Connect() + "...");
 			
 			IServer ref = serverLookup(model.getServer2Connect());			//recupero il riferimento del server
 				
 			if(ref != null)
 			{
 				try{
-					if(ref.connectMEClient(model.getClientName(),model.getClientRef()))
-					{
-						model.setDisconnectBtext(DISCONNECT_BUTTON_TEXT);	//permetto la disconnessione
-						model.setFindBenabled(true);						//abilito la ricerca
-						model.setLogColor(Color.BLUE);						//testo LOG in blu
-						model.addLogTextToLine(logPos," completata!");
-						view.setFindText("");								//resetto la barra di ricerca
-						downloadManager = new DownloadManagerThread();		//creo ed avvio un nuovo thread di download
-						downloadManager.start();						
-						CONNECT_OK = true;
-					}else{
-						model.setDisconnectBtext(CONNECT_BUTTON_TEXT);		//permetto la connessione
-						model.addLogText(model.getServer2Connect() + " NON ha accettato la richiesta di connessione.");
-					}
+					ref.connectMEClient(model.me()); //invio la richiesta di connessione
 				}catch(Exception e){
 					model.addLogTextToLine(logPos," fallita!");
 					model.setDisconnectBtext(CONNECT_BUTTON_TEXT);			//permetto la connessione
@@ -700,46 +671,35 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 			}
 			try{Thread.sleep(100);}catch(Exception exc){}					//antibounce 100ms
 			model.setDisconnectBenabled(true);								//abilito il pulsante
-		}//end synchronized(model)
-		return CONNECT_OK;
+		}//end synchronized
 	}
 	
 	/****************************************************************************************\
-	|	private boolean disconnectFromServer()
-	|	description: si disconnette dal server, restituisce true se la disconnessione non ha 
-	|				 problemi.
+	|	private void disconnectFromServer()
+	|	description: si disconnette dal server
 	\****************************************************************************************/
-	private boolean disconnectFromServer()
+	private void disconnectFromServer()
 	{
-		if(model.getDisconnectBtext().equals(CONNECT_BUTTON_TEXT))return true;	//evito di disconnettermi se non sono connesso
-		 
-		boolean DISCONNECT_OK = false;
-		
+		if(model.getDisconnectBtext().equals(CONNECT_BUTTON_TEXT))return;	//evito di disconnettermi se non sono connesso
+		 	
 		//TERMINO I THREAD DI DOWNLOAD ed EVENTUALE RICERCA
 		model.addLogText("terminazione threads download..."); 
 		killAllDownloadThreads();
 		model.addLogText("richiesta terminazione threads downloads inviata.");
 								
 		synchronized(model.getDisconnectBtext()) //prendo il lock sui dati per modificare i pulsanti
-		{
-		
+		{		
 			model.setDisconnectBenabled(false);									//disabilito il pulsante
-			int logPos = model.addLogText("disconnessione dal server " + model.getServer2Connect() + "...");
+			int logPos = model.addLogText("invio richiesta disconnessione dal server " + model.getServer2Connect() + "...");
 			
 			IServer ref = serverLookup(model.getServer2Connect());			//recupero il riferimento del server
 		
 			if(ref != null)
 			{
 				try{
-					if(ref.disconnectMEClient(model.getClientName()))
-					{
-						model.addLogTextToLine(logPos," completata!");
-						DISCONNECT_OK = true;
-					}else{
-						model.addLogText(model.getServer2Connect() + " NON ha accettato la richiesta di disconnessione.");
-					}
+					ref.disconnectMEClient(model.me()); //invio richiesta di disconnessione al mio server
 				}catch(Exception e){
-					model.addLogTextToLine(logPos," fallita!");				//non mi sono disconnesso, quindi 
+					model.addLogTextToLine(logPos," fallita!");				//non mi sono disconnesso
 				}
 			}
 			
@@ -750,9 +710,8 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 			model.setDisconnectBtext(CONNECT_BUTTON_TEXT);					//permetto la connessione
 			model.setDisconnectBenabled(true);								//abilito il pulsante
 			model.setFindBenabled(false);									//disabilito la ricerca
-		}// end synchronized(model)
-		
-		return DISCONNECT_OK;
+		}// end synchronized
+
 	}
 	
 	/****************************************************************************************\
@@ -831,6 +790,64 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 		{
 			return model.getResourceList();		
 		}
+	}
+	
+	/****************************************************************************************\
+	|	public void connectMEClient_answer(DeviceServer _server, boolean _youareconnected)
+	|	description: implementazione del metodo remoto dell'interfaccia IClient
+	\****************************************************************************************/
+	public void connectMEClient_answer(DeviceServer _server, boolean _youareconnected) throws RemoteException
+	{
+		if(_youareconnected)
+		{
+			model.setDisconnectBtext(DISCONNECT_BUTTON_TEXT);	//permetto la disconnessione
+			model.setFindBenabled(true);						//abilito la ricerca
+			model.setLogColor(Color.BLUE);						//testo LOG in blu
+			model.addLogText("stato comunicazione con il server " + _server.getName() + ": ok!");
+			view.setFindText("");								//resetto la barra di ricerca
+			downloadManager = new DownloadManagerThread();		//creo ed avvio un nuovo thread di download
+			downloadManager.start();	
+			SERVER_OK = true;
+		}else{
+			model.setDisconnectBtext(CONNECT_BUTTON_TEXT);		//permetto la connessione
+			model.addLogText(_server.getName() + " NON ha accettato la richiesta di connessione.");
+			SERVER_OK = false;
+		}
+	}	
+	
+	/****************************************************************************************\
+	|	public void disconnectMEClient_answer(DeviceServer _server, boolean _youaredisconnected)
+	|	description: implementazione del metodo remoto dell'interfaccia IClient
+	\****************************************************************************************/
+	public void disconnectMEClient_answer(DeviceServer _server, boolean _youaredisconnected) throws RemoteException
+	{
+		if(_youaredisconnected)
+		{
+			model.addLogText("disconnessione dal server " + _server.getName() + " completata!");
+		}else{
+			model.addLogText(_server.getName() + " NON ha accettato la richiesta di disconnessione.");
+		}
+	}
+	
+	/****************************************************************************************\
+	|	public void findResourceForClient_answer(Resource _risorsa, Vector<DeviceClient> _clientList)
+	|	description: implementazione del metodo remoto dell'interfaccia IClient
+	\****************************************************************************************/
+	public void findResourceForClient_answer(Resource _risorsa, Vector<DeviceClient> _clientList) throws RemoteException
+	{
+		model.addLogText("ricevo......");
+		if(VERBOSE_LOG)	//stampo la lista di clients che hanno la risorsa cercata
+			for(int i=0; i<_clientList.size(); i++)
+				model.addLogText("[ricerca_T] il client " + _clientList.get(i).getName() + " ha la risorsa " + _risorsa.getName() + " " + _risorsa.getNparts());	
+		
+		if(_clientList.size() > 0) //se esiste almeno un client che possiede la risorsa aggiungo in coda download
+		{
+			model.addResourceToDownloadQueue(_risorsa, _clientList);			
+			model.addLogText("[ricerca_T] risorsa " + _risorsa.getName() + " " + _risorsa.getNparts() + " aggiunta in coda download!");	
+			view.setFindText(""); //ora che la risorsa e' stata aggiunta svuoto il campo di testo
+		}else{
+			model.addLogText("[ricerca_T] risorsa " + _risorsa.getName() + " " + _risorsa.getNparts() + " non trovata!");
+		}	
 	}
 	
 	/****************************************************************************************\

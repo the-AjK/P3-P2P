@@ -24,8 +24,9 @@ import common.DeviceServer;
 import common.DeviceClient;
 import common.Resource;
 import java.awt.event.*;
+import java.io.Serializable;
 
-public class ServerController extends UnicastRemoteObject implements IServer, ActionListener, WindowListener
+public class ServerController extends UnicastRemoteObject implements IServer, ActionListener, WindowListener, Serializable
 {
 	//impostazioni modificabili
 	private static final String HOST = "localhost:1099";		//host per la connessione RMI
@@ -37,6 +38,12 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 	private static final String RMITAG = "P3-P2P-JK"; 								//chiave identificativa dei server per il registro RMI	
 	private boolean autoShutdownActive = false;										//flag che indica se e' attivo l'autoShutdown
 	private static final String CHECKCONNECTIONS_THREAD = "CheckConnectionsThread";	//nome del thread controllo connessioni
+	private static final String CLIENTCONNECT_THREAD = "ClientConnectThread";
+	private static final String CLIENTDISCONNECT_THREAD = "ClientDisconnectThread";	
+	private static final String SERVERCONNECT_THREAD = "ServerConnectThread";
+	private static final String CLIENTRESEARCH_THREAD = "ClientResearchThread";		//nome del thread ricerca risorse per il client
+	private static final String SERVERRESEARCH_THREAD = "ServerResearchThread";		//nome del thread ricerca risorse per il server
+	private static final String SERVERRESEARCHANSWER_THREAD = "ServerResearchAnswerThread";
 	
 	//riferimenti alle componenti View e Model
 	private ServerView view;
@@ -310,31 +317,22 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 		}
 		
 		IServer ref = null;
-		int serverConnessi = 0;
 		for(int i=0; i<serverNamesList.length; i++)
 		{
-			//BUG: synch su linux blocca la connessione all'avvio
-			//synchronized(model)		//prendo il lock sui dati del model
+			//controllo se contiene il TAG
+			if(serverNamesList[i].contains(RMITAG + "/"))
 			{
-				//controllo se contiene il TAG
-				if(serverNamesList[i].contains(RMITAG + "/"))
-				{
-					String server2connect = rmitag2name(RMITAG, serverNamesList[i]); 		//recupero il nome del server a cui voglio connettermi
-					if(server2connect.equals(model.getServerName()))continue;				//evito di connettermi a me stesso :) 
-					int logPos = model.addLogText("connessione al server " + server2connect + "...");
-					try{
-						ref = serverLookup(server2connect);									//recupero il riferimento a tale server
-						if(ref.connectMEServer(model.getServerName(),model.getServerRef())) //richiedo di connettermi al server
-						{
-							model.addServer(server2connect,ref);							//aggiorno l'interfaccia grafica
-							model.addLogTextToLine(logPos," completata!");
-							serverConnessi++;;
-						}
-					}catch(Exception e){
-						model.addLogTextToLine(logPos," fallita!");
-					}
+				String server2connect = rmitag2name(RMITAG, serverNamesList[i]); 		//recupero il nome del server a cui voglio connettermi
+				if(server2connect.equals(model.getServerName()))continue;				//evito di connettermi a me stesso :) 
+				model.addLogText("invio richiesta connessione al server " + server2connect + "...");
+				try{
+					ref = serverLookup(server2connect);									//recupero il riferimento a tale server
+					ref.connectMEServer(model.me());									//richiedo di connettermi al server
+				}catch(Exception e){
+					model.addLogText("connessione al server " + server2connect + " fallita");
+					e.printStackTrace();
 				}
-			}//synchronized(model)
+			}			
 		}
 		int serverTrovati = serverNamesList.length;
 		if(serverTrovati > 0) serverTrovati--;				//rimuovo me stesso
@@ -344,7 +342,7 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 			model.addLogText("nessun altro server online.");
 		}else{
 			model.addLogText("ricerca server online completata!");
-			model.addLogText("trovati " + serverTrovati + " server di cui " + serverConnessi + " online.");
+			//model.addLogText("trovati " + serverTrovati + " server di cui " + serverConnessi + " online.");
 		}
 		
 	} //connect2server()
@@ -421,163 +419,256 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 	}
 	
 	/****************************************************************************************\
-	|	public boolean connectMEServer(String _serverName, IServer _serverRef)
+	|	public void connectMEServer(DeviceServer _server)
 	|	description: implementazione del metodo remoto dell'interfaccia IServer
 	\****************************************************************************************/
-	public boolean connectMEServer(String _serverName, IServer _serverRef) throws RemoteException
+	public void connectMEServer(final DeviceServer _server) throws RemoteException
 	{
-		boolean CONNECTED_STATUS = false;
+		//avvia un thread di connessione per server
+		(new Thread(SERVERCONNECT_THREAD + "_" + _server.getName()){
 		
-		if(VERBOSE_LOG)
-			model.addLogText("[new server] il server " + _serverName + " richiede connessione!");
+			private boolean CONNECTED_STATUS = false;
 			
-		//controllo che non sia gia' connesso
-		if(model.serverIsHere(_serverName))
-		{
-			if(VERBOSE_LOG)
-				model.addLogText("[new server] il server " + _serverName + " e' gia' connesso!");
-			return true;
-		}
-		
-		try{
-			if(_serverRef.heartbeat().equals(HEARTBEAT_ANSWER))
+			public void run()
 			{
-				synchronized(model)									//prendo il lock sui dati del model
+				if(VERBOSE_LOG)
+					model.addLogText("[newServer_T] il server " + _server.getName() + " richiede connessione!");
+					
+				//controllo che non sia gia' connesso
+				if(model.serverIsHere(_server.getName()))
 				{
-					model.addServer(_serverName,_serverRef);		//aggiungo un nuovo server				
-					model.addLogText("[new server] il server " + _serverName + " si e' connesso!");
+					if(VERBOSE_LOG)
+						model.addLogText("[newServer_T] il server " + _server.getName() + " e' gia' connesso!");
 					CONNECTED_STATUS = true;
+				}else{
+				
+					try{
+						if(_server.getRef().heartbeat().equals(HEARTBEAT_ANSWER))
+						{
+							model.addServer(_server);		//aggiungo un nuovo server				
+							model.addLogText("[newServer_T] il server " + _server.getName() + " si e' connesso!");
+							CONNECTED_STATUS = true;
+						}			
+					}catch(Exception e){
+						if(VERBOSE_LOG)
+							model.addLogText("[newServer_T] impossibile contattare il server " + _server.getName() + "!");
+					}
 				}
-			}			
-		}catch(Exception e){
-			if(VERBOSE_LOG)
-				model.addLogText("[new server] impossibile contattare il server " + _serverName + "!");
-		}
-		
-		return CONNECTED_STATUS;
+				
+				try{
+					_server.getRef().connectMEServer_answer(model.me(), CONNECTED_STATUS); //rispondo al server
+				}catch(Exception e){
+					if(VERBOSE_LOG)
+							model.addLogText("[newServer_T] impossibile notificare il server " + _server.getName() + "!");
+				}
+				
+			}//end run()
+		}).start(); //avvio il thread richiesta connessione al server
 	}
 	
 	/****************************************************************************************\
-	|	public boolean connectMEClient(String _clientName, IClient _clientRef) 
+	|	public void connectMEServer_answer(DeviceServer _server2connect, boolean _youareconnected)
 	|	description: implementazione del metodo remoto dell'interfaccia IServer
 	\****************************************************************************************/
-	public boolean connectMEClient(String _clientName, IClient _clientRef) throws RemoteException
+	public void connectMEServer_answer(DeviceServer _server2connect, boolean _youareconnected) throws RemoteException
 	{
-		boolean NEW_CLIENT = true;
-		int logPos = 0;
-		
-		//se e' gia' connesso significa che il client vuole inviarmi una nuova lista risorse
-		if(model.clientIsHere(_clientName))
+		if(_youareconnected)
 		{
-			if(VERBOSE_LOG)
-				logPos = model.addLogText("[client " + _clientName + "] nuova lista risorse...");
-			NEW_CLIENT = false;
+			model.addLogText("connessione al server " + _server2connect.getName() + " completata!");
+			model.addServer(_server2connect);		//aggiorno l'interfaccia grafica
 		}else{
-			if(VERBOSE_LOG)
-				model.addLogText("[new client] il client " + _clientName + " richiede connessione!");
+			model.addLogText("connessione al server " + _server2connect.getName() + " fallita!");
 		}
+	}
+	
+	/****************************************************************************************\
+	|	public void connectMEClient(DeviceClient _client) 
+	|	description: implementazione del metodo remoto dell'interfaccia IServer
+	\****************************************************************************************/
+	public void connectMEClient(final DeviceClient _client) throws RemoteException
+	{
+		//avvia un thread di connessione per client
+		(new Thread(CLIENTCONNECT_THREAD + "_" + _client.getName()){
 		
-		if(VERBOSE_LOG && NEW_CLIENT)
-			model.addLogText("[new client] recupero lista risorse del client " + _clientName + "...");
-		Vector<Resource> listaRisorse;
-		try{ 
-			listaRisorse = _clientRef.getResourceList();
-		}catch(Exception e){
-			if(VERBOSE_LOG)
+			private boolean CONNECTED_STATUS = false;
+			private boolean NEW_CLIENT = true;
+			
+			public void run()
 			{
-				if(NEW_CLIENT)
-					model.addLogText("[new client] impossibile recuperare la lista risorse!");
-				else
-					model.addLogTextToLine(logPos," fail!");
-			}
-			listaRisorse = null;
-		}
-		
-		if(listaRisorse != null) //se ho recuperato la lista risorse del client
-		{
-			synchronized(model)	//prendo il lock sui dati del model
-			{
+				//se e' gia' connesso significa che il client vuole inviarmi una nuova lista risorse
+				if(model.clientIsHere(_client.getName()))
+				{
+					if(VERBOSE_LOG)
+						model.addLogText("[client " + _client.getName() + "] ricezione nuova lista risorse...");
+					NEW_CLIENT = false;
+				}else{
+					if(VERBOSE_LOG)
+						model.addLogText("[newClient_T] il client " + _client.getName() + " richiede connessione!");
+				}
+				
 				if(NEW_CLIENT)
 				{
-					model.addClient(_clientName,_clientRef,listaRisorse);	//aggiungo un nuovo client	
-					model.addLogText("[new client] il client " + _clientName + " si e' connesso!");
+					model.addClient(_client);	//aggiungo un nuovo client	
+					model.addLogText("[newClient_T] il client " + _client.getName() + " si e' connesso!");
 				}else{
-					model.addClientResourceList(_clientName,listaRisorse);		//aggiorno la lista risorse
-					model.addLogTextToLine(logPos," ok!");
+					model.addClientResourceList(_client.getName(), _client.getResourceList());	//aggiorno la lista risorse
+					model.addLogText("[client " + _client.getName() + "] lista risorse aggiornata!");
 				}
-			} 	
-			return true;
-		}else{
-			if(NEW_CLIENT)
-				model.addLogText("[new client] connessione con il client " + _clientName + " fallita!");
-			return false;
-		}
+						
+				CONNECTED_STATUS = true;
+				
+				try{
+					_client.getRef().connectMEClient_answer(model.me(), CONNECTED_STATUS);
+				}catch(Exception e){
+					if(VERBOSE_LOG)
+							model.addLogText("[newClient_T] impossibile notificare il client " + _client.getName() + "!");
+				}
+				
+			}//end run()		
+		}).start(); //avvio il thread di richiesta connessione per i client
 	}
 	
 	/****************************************************************************************\
-	|	public boolean disconnectMEClient(String _clientName) 
+	|	public void disconnectMEClient(final DeviceClient _client) 
 	|	description: implementazione del metodo remoto dell'interfaccia IServer
 	\****************************************************************************************/
-	public boolean disconnectMEClient(String _clientName) throws RemoteException
+	public void disconnectMEClient(final DeviceClient _client) throws RemoteException
 	{
-		//se il client non e' connesso, non faccio nulla
-		if(!model.clientIsHere(_clientName))return false;
+		//avvia un thread di disconnessione per client
+		(new Thread(CLIENTDISCONNECT_THREAD + "_" + _client.getName()){
 		
-		synchronized(model)	//prendo il lock sui dati del model
-		{
-			model.removeClient(_clientName);			//rimuovo il client	
-			
-			//TODO -> interrompere tutti i threads (ricerca) di questo client che vuole disconnettersi
-			
-			model.addLogText("il client " + _clientName + " si e' disconnesso!");
-		} 	
-		return true;
+			private boolean DISCONNECTED_STATUS = false;
+					
+			public void run()
+			{			
+				//se il client non e' connesso, non faccio nulla
+				if(!model.clientIsHere(_client.getName()))
+				{
+					DISCONNECTED_STATUS = false;
+				}else{
+					model.removeClient(_client.getName());			//rimuovo il client	
+						
+					//TODO -> interrompere tutti i threads (ricerca) di questo client che vuole disconnettersi
+						
+					model.addLogText("il client " + _client.getName() + " si e' disconnesso!"); 	
+					DISCONNECTED_STATUS = true;
+				}
+				
+				try{
+					_client.getRef().disconnectMEClient_answer(model.me(), DISCONNECTED_STATUS);
+				}catch(Exception e){
+					if(VERBOSE_LOG)
+							model.addLogText("impossibile notificare la disconnessione al client " + _client.getName() + "!");
+				}			
+				
+			}//end run()
+		}).start(); //avvio il thread di richiesta disconnessione
 	}
 	
 	/****************************************************************************************\
-	|	public Vector<DeviceClient> findResourceForServer(String _serverName, Resource _risorsa) 
+	|	public void findResourceForServer_answer(final DeviceClient _client, final Resource _risorsa, final Vector<DeviceClient> _clientList)
 	|	description: implementazione del metodo remoto dell'interfaccia IServer
 	\****************************************************************************************/
-	public Vector<DeviceClient> findResourceForServer(String _serverName, Resource _risorsa) throws RemoteException
+	public void findResourceForServer_answer(final DeviceClient _client, final Resource _risorsa, final Vector<DeviceClient> _clientList) throws RemoteException
 	{
-		//TODO lanciare un thread di ricerca?
+		(new Thread(SERVERRESEARCHANSWER_THREAD + "_" + _client.getName() + "_" + _risorsa.getName() + " " + _risorsa.getNparts()){
 		
-		if(VERBOSE_LOG)
-			model.addLogText("il server " + _serverName + " richiede ricerca di " + _risorsa.getName() + " " + _risorsa.getNparts());
-		
-		//cerco tra i miei client locali se la risorsa e' presente
-		return model.getClientsOwnResourceList(_risorsa);
-		
+			public void run(){
+				model.addResearchClientList(_client, _risorsa, _clientList);
+				//ho ricevuto la risposta da un server, quindi decremento il contatore richieste
+				model.decrementNumberOfRequests(_client, _risorsa);
+				if(model.getNumberOfRequests(_client, _risorsa) == 0)	//se ho ricevuto tutte le risposte
+				{
+					//interrompo il thread di ricerca
+					killThread(CLIENTRESEARCH_THREAD + "_" + _client.getName() + "_" + _risorsa.getName() + " " + _risorsa.getNparts());
+				}
+			}//end run()
+		}).start();
 	}
- 
+	
 	/****************************************************************************************\
-	|	public Vector<DeviceClient> findResourceForClient(String _clientName, Resource _risorsa) 
+	|	public void findResourceForServer(final DeviceServer _server, final Resource _risorsa, final DeviceClient _client) 
 	|	description: implementazione del metodo remoto dell'interfaccia IServer
 	\****************************************************************************************/
-	public Vector<DeviceClient> findResourceForClient(String _clientName, Resource _risorsa) throws RemoteException
+	public void findResourceForServer(final DeviceServer _server, final Resource _risorsa, final DeviceClient _client) throws RemoteException
 	{
-		//TODO lanciare un thread di ricerca?
-				
-		if(VERBOSE_LOG)
-			model.addLogText("il client " + _clientName + " richiede ricerca di " + _risorsa.getName() + " " + _risorsa.getNparts());
+		(new Thread(SERVERRESEARCH_THREAD + "_" + _server.getName() + "_" + _risorsa.getName() + " " + _risorsa.getNparts()){
 		
-		//cerco tra i miei client locali se la risorsa e' presente
-		Vector<DeviceClient> listaClient = model.getClientsOwnResourceList(_risorsa);
-		
-		//ora inoltro la richiesta a tutti i server a cui sono collegato
-		DeviceServer server;
-		for(int i=0; i<model.getNservers(); i++)
-		{
-			server = model.getServerList().get(i); 
-			try{
-				//inoltro la richiesta al server ed aggiungo la risposta nella listaClient
-				listaClient.addAll(server.getRef().findResourceForServer(model.getServerName(),_risorsa));
+			public void run(){
+				if(VERBOSE_LOG)
+					model.addLogText("il server " + _server.getName() + " richiede ricerca di " + _risorsa.getName() + " " + _risorsa.getNparts());
 				
-			}catch(Exception e){
-				model.addLogText("errore inoltro richiesta al server " + server.getName());
-			}
-		}		
-		return listaClient;
+				//cerco tra i miei client locali se la risorsa e' presente
+				//e richiamo un metodo remoto al server che ha fatto la richiesta
+				try{
+					_server.getRef().findResourceForServer_answer(_client, _risorsa, model.getClientsOwnResourceList(_risorsa));
+				}catch(Exception e){
+					if(VERBOSE_LOG)
+						model.addLogText("impossibile notificare il risultato ricerca al server " + _server.getName() + "!");
+				}
+			}//end run()
+		}).start(); //avvio il thread ricerca server		
+	}
+	
+	/****************************************************************************************\
+	|	public void findResourceForClient(final DeviceClient _client, final Resource _risorsa) 
+	|	description: implementazione del metodo remoto dell'interfaccia IServer
+	\****************************************************************************************/
+	public void findResourceForClient(final DeviceClient _client, final Resource _risorsa) throws RemoteException
+	{
+		(new Thread(CLIENTRESEARCH_THREAD + "_" + _client.getName() + "_" + _risorsa.getName() + " " + _risorsa.getNparts()){
+		
+			public void run(){
+				
+				if(VERBOSE_LOG)
+					model.addLogText("il client " + _client.getName() + " richiede ricerca di " + _risorsa.getName() + " " + _risorsa.getNparts());
+				
+				//aggiungo la richiesta in coda
+				model.addResearchRequest(_client, _risorsa);
+				
+				//cerco tra i miei client locali se la risorsa e' presente ed aggiorno la coda richieste
+				//model.addResearchClientList(_client, _risorsa, model.getClientsOwnResourceList(_risorsa));
+				
+				//ora inoltro la richiesta a tutti i server a cui sono collegato
+				DeviceServer server;
+				for(int i=0; i<model.getNservers(); i++)
+				{
+					server = model.getServerList().get(i); 
+					try{
+						//inoltro la richiesta al server ed aggiungo la risposta nella listaClient
+						server.getRef().findResourceForServer(model.me(), _risorsa, _client);
+						//incremento il numero delle richieste inviate ai vari server
+						model.incrementNumberOfRequests(_client, _risorsa);						
+					}catch(Exception e){
+						model.addLogText("errore inoltro richiesta al server " + server.getName());
+					}
+				}	
+	
+				//se il numero di richieste è maggiore di zero, aspetto la risposta...
+				if(model.getNumberOfRequests(_client, _risorsa) > 0)
+				{
+					try{
+						sleep(10000);
+						model.addLogText("timout ricezione risposte dai server");
+					}catch(InterruptedException ie){
+						model.addLogText("ricevute tutte le risposte dai server");
+					}		
+				}
+							
+				//notifico il client con la lista risorse
+				model.addLogText(_risorsa.getName());
+				Vector<DeviceClient> listaClients = model.getResearchClientList(_client,_risorsa);
+				
+				try{
+					_client.getRef().findResourceForClient_answer(_risorsa, listaClients);
+				}catch(Exception e){
+					model.addLogText("impossibile notificare la lista clients...");
+					e.printStackTrace();
+				}
+				
+				model.addLogText("done!");
+			}//end run()
+		}).start(); //avvio il thread ricerca client	
 	}
 
 }//end class ServerController()

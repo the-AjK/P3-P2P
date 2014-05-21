@@ -12,8 +12,9 @@
 package common;
 
 import server.IServer;
+import java.io.Serializable;
 
-public class DeviceServer
+public class DeviceServer implements Serializable
 {
 	//campi dati
 	private String nomeServer;	//nome del server

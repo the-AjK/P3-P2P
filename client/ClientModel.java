@@ -88,7 +88,7 @@ public class ClientModel extends java.util.Observable
 	|	public DeviceClient getMe()
 	|	description: restituisce me stesso
 	\****************************************************************************************/
-	public DeviceClient getMe(){return me;}
+	public DeviceClient me(){return me;}
 	
 	/****************************************************************************************\
 	|	public String getAnimIcon()

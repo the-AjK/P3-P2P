@@ -29,11 +29,33 @@ public class ServerModel extends java.util.Observable
 	private Vector<String> log;				//log di sistema
 	private Color coloreLog;				//colore testo della casella log
 	private String animationIcon;			//piccola icona di animazione per visualizzare lo stato del client
+	private Vector<ResearchRequest> researchRequest; //lista di richieste di ricerca
 	
 	//lock
 	private Object log_lock;
 	private Object clients_lock;
 	private Object servers_lock;
+	private Object requests_lock;
+	
+	/****************************************************************************************\
+	|	private class ResearchRequest
+	|	description: classe interna per gestire la coda di richieste
+	\****************************************************************************************/
+	private class ResearchRequest
+	{
+		public DeviceClient client;
+		public Resource risorsa;
+		public Vector<DeviceClient> clientList;
+		public int numberOfRequests;
+		
+		public ResearchRequest(DeviceClient _client, Resource _risorsa)
+		{
+			client = _client;
+			risorsa = _risorsa;
+			numberOfRequests = 0;
+			Vector<DeviceClient> clientList = new Vector<DeviceClient>();
+		}	
+	}
 	
 	/****************************************************************************************\
 	|	public ServerModel()
@@ -45,10 +67,12 @@ public class ServerModel extends java.util.Observable
 		me = new DeviceServer("",null); 	//creo me stesso :)
 		clients = new Vector<DeviceClient>();
 		servers = new Vector<DeviceServer>();
+		researchRequest = new Vector<ResearchRequest>();
 		log = new Vector<String>();
 		log_lock = new Object();
 		clients_lock = new Object();
 		servers_lock = new Object();
+		requests_lock = new Object();
 		log.add("  ______  ______          ______  ______  ______ ");  
 		log.add(" |   __ \\|__    | ______ |   __ \\|__    ||   __ \\"); 
 		log.add(" |    __/|__    ||______||    __/|    __||    __/"); 
@@ -83,6 +107,12 @@ public class ServerModel extends java.util.Observable
 		animationIcon = _s;
 		viewRefresh();
 	}	
+	
+	/****************************************************************************************\
+	|	public DeviceServer me()
+	|	description: restituisce me stesso
+	\****************************************************************************************/
+	public DeviceServer me(){return me;}
 
 	/****************************************************************************************\
 	|	public String getServerName()
@@ -137,6 +167,149 @@ public class ServerModel extends java.util.Observable
 	|	description: restituisce la lista dei clients connessi al server
 	\****************************************************************************************/
 	public Vector<DeviceClient> getClientList(){return clients;}
+	
+	/****************************************************************************************\
+	|	public void incrementNumberOfRequests(DeviceClient _client, Resource _risorsa)
+	|	description: incrementa il numero di richieste
+	\****************************************************************************************/
+	public void incrementNumberOfRequests(DeviceClient _client, Resource _risorsa)
+	{
+		synchronized(requests_lock)
+		{
+			for(int i=0; i<researchRequest.size(); i++)
+			{
+				if(researchRequest.get(i).client.getName().equals(_client.getName()) &&
+					researchRequest.get(i).risorsa.getName().equals(_risorsa.getName()) &&
+					researchRequest.get(i).risorsa.getNparts() == _risorsa.getNparts()
+				){
+					researchRequest.get(i).numberOfRequests++;
+					break;
+				}
+			}	
+		}
+	}
+	
+	/****************************************************************************************\
+	|	public void decrementNumberOfRequests(DeviceClient _client, Resource _risorsa)
+	|	description: decrementa il numero di richieste
+	\****************************************************************************************/
+	public void decrementNumberOfRequests(DeviceClient _client, Resource _risorsa)
+	{
+		synchronized(requests_lock)
+		{
+			for(int i=0; i<researchRequest.size(); i++)
+			{
+				if(researchRequest.get(i).client.getName().equals(_client.getName()) &&
+					researchRequest.get(i).risorsa.getName().equals(_risorsa.getName()) &&
+					researchRequest.get(i).risorsa.getNparts() == _risorsa.getNparts()
+				){
+					researchRequest.get(i).numberOfRequests--;
+					break;
+				}
+			}	
+		}
+	}
+	
+	/****************************************************************************************\
+	|	public int getNumberOfRequests(DeviceClient _client, Resource _risorsa)
+	|	description: restituisce il numero di richieste
+	\****************************************************************************************/
+	public int getNumberOfRequests(DeviceClient _client, Resource _risorsa)
+	{
+		int result = 0;		
+		synchronized(requests_lock)
+		{
+			for(int i=0; i<researchRequest.size(); i++)
+			{
+				if(researchRequest.get(i).client.getName().equals(_client.getName()) &&
+					researchRequest.get(i).risorsa.getName().equals(_risorsa.getName()) &&
+					researchRequest.get(i).risorsa.getNparts() == _risorsa.getNparts()
+				){
+					result = researchRequest.get(i).numberOfRequests;
+					break;
+				}
+			}	
+		}
+		return result;
+	}
+	
+	/****************************************************************************************\
+	|	public void addResearchRequest(DeviceClient _client, Resource _risorsa)
+	|	description: aggiunge una richiesta in coda richieste risorse
+	\****************************************************************************************/
+	public void addResearchRequest(DeviceClient _client, Resource _risorsa)
+	{
+		synchronized(requests_lock)
+		{
+			researchRequest.add(new ResearchRequest(_client,_risorsa));
+		}
+	}
+	
+	/****************************************************************************************\
+	|	public void removeResearchRequest(DeviceClient _client, Resource _risorsa)
+	|	description: rimuove una richiesta dalla lista
+	\****************************************************************************************/
+	public void removeResearchRequest(DeviceClient _client, Resource _risorsa)
+	{
+		synchronized(requests_lock)
+		{
+			for(int i=0; i<researchRequest.size(); i++)
+			{
+				if(researchRequest.get(i).client.getName().equals(_client.getName()) &&
+					researchRequest.get(i).risorsa.getName().equals(_risorsa.getName()) &&
+					researchRequest.get(i).risorsa.getNparts() == _risorsa.getNparts()
+				){
+					researchRequest.get(i).clientList.remove(i);
+					break;
+				}
+			}	
+		}
+	}
+	
+	/****************************************************************************************\
+	|	public Vector<DeviceClient> getResearchClientList(DeviceClient _client, Resource _risorsa)
+	|	description: restituisce la lista dei client che possiedono una determinata risorsa
+	\****************************************************************************************/
+	public Vector<DeviceClient> getResearchClientList(DeviceClient _client, Resource _risorsa)
+	{
+		Vector<DeviceClient> clients = new Vector<DeviceClient>();
+		
+		synchronized(requests_lock)
+		{
+			for(int i=0; i<researchRequest.size(); i++)
+			{
+				if(researchRequest.get(i).client.getName().equals(_client.getName()) &&
+					researchRequest.get(i).risorsa.getName().equals(_risorsa.getName()) &&
+					researchRequest.get(i).risorsa.getNparts() == _risorsa.getNparts()
+				){
+					clients = researchRequest.get(i).clientList;
+					break;
+				}
+			}	
+		}
+		return clients;
+	}
+	
+	/****************************************************************************************\
+	|	public void addResearchClientList(DeviceClient _client, Resource _risorsa, Vector<DeviceClient> _clients2add)
+	|	description: restituisce la lista dei client che possiedono una determinata risorsa
+	\****************************************************************************************/
+	public void addResearchClientList(DeviceClient _client, Resource _risorsa, Vector<DeviceClient> _clients2add)
+	{
+		synchronized(requests_lock)
+		{
+			for(int i=0; i<researchRequest.size(); i++)
+			{
+				if(researchRequest.get(i).client.getName().equals(_client.getName()) &&
+					researchRequest.get(i).risorsa.getName().equals(_risorsa.getName()) &&
+					researchRequest.get(i).risorsa.getNparts() == _risorsa.getNparts()
+				){
+					researchRequest.get(i).clientList.addAll(_clients2add);
+					break;
+				}
+			}	
+		}
+	}
 	
 	/****************************************************************************************\
 	|	public void removeServer(String _server2remove)
@@ -336,27 +509,27 @@ public class ServerModel extends java.util.Observable
 	public String getLogText(){return vector2String(log);}
 	
 	/****************************************************************************************\
-	|	public void addServer(String _nomeServer, IServer _ref)
+	|	public void addServer(DeviceServer _server)
 	|	description: aggiunge un server alla lista di servers
 	\****************************************************************************************/
-	public void addServer(String _nomeServer, IServer _ref)
+	public void addServer(DeviceServer _server)
 	{
 		synchronized(servers_lock)
 		{
-			servers.add(new DeviceServer(_nomeServer,_ref));
+			servers.add(_server);
 		}
 		viewRefresh();
 	}
 	
 	/****************************************************************************************\
-	|	public void addClient(String _nomeClient, IClient _ref, Vector<Resource> _listaRisorse)
+	|	public void addClient(DeviceClient _client)
 	|	description: aggiunge un client alla lista dei clients
 	\****************************************************************************************/
-	public void addClient(String _nomeClient, IClient _ref, Vector<Resource> _listaRisorse)
+	public void addClient(DeviceClient _client)
 	{
 		synchronized(clients_lock)
 		{
-			clients.add(new DeviceClient(_nomeClient,_ref,_listaRisorse));
+			clients.add(_client);
 		}
 		viewRefresh();
 	}

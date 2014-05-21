@@ -17,6 +17,7 @@ import java.util.Vector;
 import client.IClient;
 import common.Resource;
 import common.DeviceClient;
+import common.DeviceServer;
 
 public interface IServer extends Remote
 {
@@ -30,34 +31,46 @@ public interface IServer extends Remote
 	public String heartbeat() throws RemoteException;
 	
 	/****************************************************************************************\
-	|	public boolean connectMEServer(String _serverName)
+	|	public void connectMEServer(final DeviceServer _server)
 	|	description: utilizzato dai server per richiedere la connessione al server
 	\****************************************************************************************/
-	public boolean connectMEServer(String _serverName, IServer _serverRef) throws RemoteException;
+	public void connectMEServer(final DeviceServer _server) throws RemoteException;
 	
 	/****************************************************************************************\
-	|	public boolean connectMEClient(String _clientName, IClient _clientRef)
+	|	public void connectMEServer_answer(DeviceServer _server2connect, boolean _youareconnected)
+	|	description: utilizzato dal server per confermare la richiesta di connessione ai vari server
+	\****************************************************************************************/
+	public void connectMEServer_answer(DeviceServer _server2connect, boolean _youareconnected) throws RemoteException;
+	
+	/****************************************************************************************\
+	|	public void connectMEClient(final DeviceClient _client) 
 	|	description: utilizzato dai clients per richiedere la connessione al server e/o per 
 	|				 notificare la lista di risorse
 	\****************************************************************************************/
-	public boolean connectMEClient(String _clientName, IClient _clientRef) throws RemoteException;
+	public void connectMEClient(final DeviceClient _client) throws RemoteException;
 	
 	/****************************************************************************************\
-	|	public boolean disconnectMEClient(String _clientName)
+	|	public void disconnectMEClient(final DeviceClient _client)
 	|	description: utilizzato dai clients per richiedere la disconnessione al server
 	\****************************************************************************************/
-	public boolean disconnectMEClient(String _clientName) throws RemoteException;
+	public void disconnectMEClient(final DeviceClient _client) throws RemoteException;
 	
 	/****************************************************************************************\
-	|	public Vector<DeviceClient> findResourceForServer(String _serverName, Resource _risorsa) 
+	|	public void findResourceForServer_answer(final DeviceClient _client, final Resource _risorsa, final Vector<DeviceClient> _clientList)
+	|	description: utilizzato dai server per notificare il risultato della ricerca
+	\****************************************************************************************/
+	public void findResourceForServer_answer(final DeviceClient _client, final Resource _risorsa, final Vector<DeviceClient> _clientList) throws RemoteException;	
+	
+	/****************************************************************************************\
+	|	public void findResourceForServer(final DeviceServer _server, final Resource _risorsa, final DeviceClient _client) 
 	|	description: utilizzato dai server per inoltrare la richiesta di ricerca risorsa
 	\****************************************************************************************/
-	public Vector<DeviceClient> findResourceForServer(String _serverName, Resource _risorsa) throws RemoteException;
+	public void findResourceForServer(final DeviceServer _server, final Resource _risorsa, final DeviceClient _client) throws RemoteException;
 
 	/****************************************************************************************\
-	|	public Vector<DeviceClient> findResourceForClient(String _clientName, Resource _risorsa) 
+	|	public void findResourceForClient(final DeviceClient _client, final Resource _risorsa) 
 	|	description: utilizzato dai client per chiedere la risorsa al proprio server
 	\****************************************************************************************/
-	public Vector<DeviceClient> findResourceForClient(String _clientName, Resource _risorsa) throws RemoteException;
+	public void findResourceForClient(final DeviceClient _client, final Resource _risorsa) throws RemoteException;
 	
 } //end interface IServer()
