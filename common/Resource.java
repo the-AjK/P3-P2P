@@ -24,6 +24,7 @@ public class Resource implements Serializable
 	
 	private class ResourcePart implements Serializable
 	{												//contenuto informativo della parte di risorsa
+		public boolean status_OK;					//stato generale della parte
 		public boolean file_header;					//l'header viene scritto ad inizio download
 		public int file_body;						//per poi finire con la scrittura del body che indica il download completo
 		
@@ -32,6 +33,7 @@ public class Resource implements Serializable
 													
 		public ResourcePart(boolean _file_header, int _file_body)			
 		{
+			status_OK = true;
 			file_header = _file_header;
 			file_body = _file_body;
 			logDownload = new Vector<DeviceClient>();
@@ -88,6 +90,18 @@ public class Resource implements Serializable
 	public void addLogDownload(DeviceClient _client, int _parteRisorsa){
 		partiRisorsa.get(_parteRisorsa).logDownload.add(_client);
 	}
+	
+	/****************************************************************************************\
+	|	public boolean partIsOK(int _parte)
+	|	description: restituisce true se la parte di risorsa ha il flag status_OK a true
+	\****************************************************************************************/
+	public boolean partIsOK(int _parte){return partiRisorsa.get(_parte).status_OK;}
+	
+	/****************************************************************************************\
+	|	public void setFailPart(int _parte)
+	|	description: setta la parte indicata come fallita
+	\****************************************************************************************/
+	public void setFailPart(int _parte){partiRisorsa.get(_parte).status_OK = false;}
 	
 	/****************************************************************************************\
 	|	public boolean isFull()

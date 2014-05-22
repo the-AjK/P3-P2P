@@ -36,6 +36,7 @@ public class ClientModel extends java.util.Observable
 	private Object log_lock;
 	private Object downloadQueue_lock;
 	private Object risorse_lock;
+	private Object view_lock;
 	
 	private class ResourceDownloadQueue
 	{
@@ -64,6 +65,7 @@ public class ClientModel extends java.util.Observable
 		log_lock = new Object();
 		downloadQueue_lock = new Object();
 		risorse_lock = new Object();
+		view_lock = new Object();
 		
 		log.add("  ______  ______          ______  ______  ______ ");  
 		log.add(" |   __ \\|__    | ______ |   __ \\|__    ||   __ \\"); 
@@ -78,10 +80,13 @@ public class ClientModel extends java.util.Observable
 	|	public void viewRefresh()
 	|	description: notifica la parte view in modalita' "model-pull"
 	\****************************************************************************************/
-	private void viewRefresh()
+	public void viewRefresh()
 	{
-		setChanged();
-		notifyObservers();	//model pull
+		synchronized(view_lock)
+		{
+			setChanged();
+			notifyObservers();	//model pull
+		}
 	}
 	
 	/****************************************************************************************\
@@ -184,7 +189,20 @@ public class ClientModel extends java.util.Observable
 			size = downloadQueue.size();
 		}
 		return size;
-	}	
+	}
+
+	/****************************************************************************************\
+	|	public void downloadQueueSetFailPart(int _nRisorsa, int _nParte)
+	|	description: setta una parte di risorsa come fallita
+	\****************************************************************************************/
+	public void downloadQueueSetFailPart(int _nRisorsa, int _nParte)
+	{
+		synchronized(downloadQueue_lock)
+		{
+			downloadQueue.get(_nRisorsa).risorsa.setFailPart(_nParte);
+		}
+		viewRefresh();
+	}
 	
 	/****************************************************************************************\
 	|	public void removeResourceInDownload(int _n)
@@ -196,6 +214,21 @@ public class ClientModel extends java.util.Observable
 		{
 			downloadQueue.remove(_n);
 		}
+		viewRefresh();
+	}
+	
+	/****************************************************************************************\
+	|	public void cleanDownloadQueue()
+	|	description: svuota la coda download in caso di disconnessione
+	\****************************************************************************************/
+	public void cleanDownloadQueue()
+	{
+		synchronized(downloadQueue_lock)
+		{
+			for(int i=0; i<downloadQueue.size(); i++)
+				downloadQueue.remove(i);
+		}
+		viewRefresh();
 	}
 	
 	/****************************************************************************************\
@@ -249,7 +282,12 @@ public class ClientModel extends java.util.Observable
 					if(downloadQueue.get(i).risorsa.isPartEmpty(j)){
 						res = res + "_ \n";
 					}else if(downloadQueue.get(i).risorsa.isPartInDownload(j)){
-						res = res + "[ ] in download...\n";
+						if(!downloadQueue.get(i).risorsa.partIsOK(j))
+						{
+							res = res + "[ ] download fallito!\n";
+						}else{
+							res = res + "[ ] in download...\n";
+						}
 					}else if(downloadQueue.get(i).risorsa.isPartFull(j)){
 						res = res + "[*] done!\n";
 					}else{

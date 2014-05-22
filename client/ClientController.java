@@ -157,6 +157,10 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 								if(model.getDisconnectBtext().equals(DISCONNECT_BUTTON_TEXT) ||  //se ero connesso
 								   model.getDisconnectBtext().equals(CONNECTION_BUTTON_TEXT) )	 //oppure in fase di connessione
 									model.addLogText("[check_T] connessione al server " + model.getServer2Connect() + " terminata!");
+								//termino i threads
+								model.addLogText("terminazione eventuali threads download..."); 
+								killAllDownloadThreads();
+								model.addLogText("richiesta terminazione threads downloads inviata.");
 								model.setDisconnectBtext(CONNECT_BUTTON_TEXT);		//permetto la connessione
 								model.setDisconnectBenabled(true);
 								model.setFindBenabled(false);						//disabilito la ricerca
@@ -179,6 +183,10 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 							if(model.getDisconnectBtext().equals(DISCONNECT_BUTTON_TEXT) ||  //se ero connesso
 							   model.getDisconnectBtext().equals(CONNECTION_BUTTON_TEXT) )	 //oppure in fase di connessione
 								model.addLogText("[check_T] connessione al server " + model.getServer2Connect() + " terminata!");
+							//termino i threads di download
+							model.addLogText("terminazione eventuali threads download..."); 
+							killAllDownloadThreads();
+							model.addLogText("richiesta terminazione threads downloads inviata.");
 							model.setDisconnectBtext(CONNECT_BUTTON_TEXT);		//permetto la connessione
 							model.setDisconnectBenabled(true);
 							model.setFindBenabled(false);						//disabilito la ricerca
@@ -192,6 +200,11 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 							if(model.getDisconnectBtext().equals(DISCONNECT_BUTTON_TEXT) ||  //se ero connesso
 							   model.getDisconnectBtext().equals(CONNECTION_BUTTON_TEXT) )	 //oppure in fase di connessione
 								model.addLogText("[check_T] connessione al server " + model.getServer2Connect() + " terminata!");
+							
+							//termino threads download 
+							model.addLogText("terminazione eventuali threads download..."); 
+							killAllDownloadThreads();
+							model.addLogText("richiesta terminazione threads downloads inviata.");
 							model.setDisconnectBtext(CONNECT_BUTTON_TEXT);		//permetto la connessione
 							model.setDisconnectBenabled(true);
 							model.setFindBenabled(false);						//disabilito la ricerca
@@ -436,6 +449,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 						synchronized(downloadManager_lock)
 						{
 							risorsa.setPartEmpty(parte);	//reimposto la risorsa come vuota
+							model.viewRefresh();
 							activeClients.remove(client);
 							listaClient.remove(clientPos);
 						}
@@ -444,13 +458,27 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 				}catch(InterruptedException ie){
 					//model.addLogText("[downloadP_T] interrupted exception!");
 					
-					//TODO discriminare se l'interruzione è avvenuta a causa di downloadStop oppure a causa di una disconnessione manuale
-					model.addLogText("[downloadP_T] download " + risorsa.getName() + "." + parte + " completato!");
-					synchronized(downloadManager_lock)
+					//se lo status e' ok significa che l'interruzione e' avvenuta tramite il metodo downloadStop, 
+					//quindi il download e' terminato con successo
+					if(risorsa.partIsOK(parte))
 					{
-						risorsa.setPartFull(parte);				//setto la parte come completata
-						activeClients.remove(client);
-						activeDownloads--;
+						model.addLogText("[downloadP_T] download " + risorsa.getName() + "." + parte + " completato!");
+						synchronized(downloadManager_lock)
+						{
+							risorsa.setPartFull(parte);				//setto la parte come completata
+							model.viewRefresh();
+							activeClients.remove(client);
+							activeDownloads--;
+						}
+					}else{
+						//altrimenti e' avvenuta una disconnessione manuale del client, oppure causata da qualche
+						//problema di rete
+						model.addLogText("[downloadP_T] download " + risorsa.getName() + "." + parte + " fallito!");
+						synchronized(downloadManager_lock)
+						{
+							activeClients.remove(client);
+							activeDownloads--;
+						}
 					}
 				}
 				catch(Exception e){
@@ -504,6 +532,17 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 	\****************************************************************************************/
 	private void killAllDownloadThreads()
 	{
+		//se sto eliminando i thread di download
+		for(int i=0; i<model.getNdownloadQueue(); i++)
+		{
+			Resource risorsa = model.getResourceInDownload(i);
+			for(int j=0; j<risorsa.getNparts(); j++)
+			{
+				if(risorsa.isPartInDownload(j)) //se la parte è in download la segnalo come fallita
+					model.downloadQueueSetFailPart(i,j);
+			}
+		}
+		
 		Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
 		Thread[] threadList = threadSet.toArray(new Thread[threadSet.size()]);
 		for(int i=0; i<threadList.length; i++)
@@ -514,6 +553,14 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 			   threadList[i].getName().startsWith(UPLOADRESOURCEPART_THREAD) )			
 				threadList[i].interrupt();
 		}
+		
+		//attendo un po' prima di svuotare la coda download
+		try{
+			Thread.sleep(5000);
+		}catch(InterruptedException ie){}
+		
+		//svuoto la coda download
+		model.cleanDownloadQueue();		
 	}
 		
 	/****************************************************************************************\
