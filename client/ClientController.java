@@ -225,7 +225,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 		
 		public RicercaRisorsaThread(String _nomeRisorsa, int _partiRisorsa)
 		{
-			super(RICERCARISORSA_THREAD + "_" + _nomeRisorsa + "_" + _partiRisorsa);
+			super(RICERCARISORSA_THREAD + "_" + _nomeRisorsa + "." + _partiRisorsa);
 			risorsaDaCercare = new Resource(_nomeRisorsa, _partiRisorsa, RESOURCE_EMPTY);
 		}
 		
@@ -628,7 +628,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 			}			
 
 			//controllo di non aver già inviato una richiesta di ricerca al mio server
-			if(getThread(RICERCARISORSA_THREAD + "_" + nomeRisorsa + "_" + partiRisorsa) != null)
+			if(getThread(RICERCARISORSA_THREAD + "_" + nomeRisorsa + "." + partiRisorsa) != null)
 			{
 				model.addLogText("[input_err] richiesta ricerca risorsa gia' inviata!");
 				model.setFindBenabled(true);
@@ -871,6 +871,8 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 		}else{
 			model.addLogText("[ricerca_T] risorsa " + _risorsa.getName() + " " + _risorsa.getNparts() + " non trovata!");
 		}	
+		//chiudo ufficialmente il thread di ricerca relativo a questa risorsa:
+		killThread(RICERCARISORSA_THREAD + "_" + _risorsa.getName() + "." + _risorsa.getNparts());
 	}
 	
 	/****************************************************************************************\
