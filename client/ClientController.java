@@ -9,6 +9,7 @@
 |	Version: 0.1 - creazione struttura scheletro
 |			 0.2 - gestione disconnessione server e registro RMI
 |			 0.3 - aggiunta gestione threads in background
+|			 
 |
 \****************************************************************************************/
 package client;
@@ -30,7 +31,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 {
 	//impostazioni modificabili
 	private static final String HOST = "localhost:1099";					//host per la connessione RMI
-	private static final int DOWNLOAD_TIMEOUT = 3000;						//tempo per simulare il download di una parte di risorsa
+	private static final int DOWNLOAD_TIMEOUT = 6969;						//tempo per simulare il download di una parte di risorsa
 	private static final boolean VERBOSE_LOG = true;						//se true visualizza piu' messaggi di log
 	
 	
@@ -325,6 +326,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 								model.addLogText("[download_T] download risorsa " + risorsa.getName() + " " + risorsa.getNparts() + " terminato!");
 								//sposto la nuova risorsa completa sulla lista delle mie risorse
 								//aspetto un po' prima di spostare la risorsa
+								model.addLogText("[download_T] sposto risorsa " + risorsa.getName() + " " + risorsa.getNparts() + " nella lista file completi...");
 								sleep(DOWNLOAD_TIMEOUT);
 								model.addResource(risorsa);
 								model.removeResourceInDownload(i);	//rimuovo la risorsa dalla coda download

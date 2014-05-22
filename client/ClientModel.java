@@ -256,7 +256,12 @@ public class ClientModel extends java.util.Observable
 						res = res + "--- \n";  //unknow status ! :(
 					}
 				}
-				res = res + "}\n\n";
+				if(downloadQueue.get(i).risorsa.isFull())
+				{
+					res = res + "} [spostamento in corso...]\n\n";
+				}else{
+					res = res + "}\n\n";
+				}
 			}
 		}
 		return res;

@@ -31,18 +31,21 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 	//impostazioni modificabili
 	private static final String HOST = "localhost:1099";		//host per la connessione RMI
 	private static final boolean VERBOSE_LOG = true;			//se true visualizza piu' messaggi di log
+	private static final int SEARCHSIMULATION_TIMEOUT = 3000;	//tempo per simulare la ricerca delle risorse [ms]
+	
 	private static final int AUTO_SHUTDOWN_TIMEOUT = 22;		//timeout per l'auto spegnimento in caso di problemi con connessione RMI [s]
 	private static final int CHECKCONNECTIONS_TIMEOUT = 3000;	//controllo connessioni in background [ms]
+	private static final int SERVERSREQUESTS_TIMEOUT = 10000;	//timeout di attesa delle risposte dei server alle richieste di ricerca [ms]
 	
 	//impostazioni NON modificabili
-	private static final String RMITAG = "P3-P2P-JK"; 								//chiave identificativa dei server per il registro RMI	
-	private boolean autoShutdownActive = false;										//flag che indica se e' attivo l'autoShutdown
-	private static final String CHECKCONNECTIONS_THREAD = "CheckConnectionsThread";	//nome del thread controllo connessioni
+	private static final String RMITAG = "P3-P2P-JK"; 										//chiave identificativa dei server per il registro RMI	
+	private boolean autoShutdownActive = false;												//flag che indica se e' attivo l'autoShutdown
+	private static final String CHECKCONNECTIONS_THREAD = "CheckConnectionsThread";			//nome del thread controllo connessioni
 	private static final String CLIENTCONNECT_THREAD = "ClientConnectThread";
 	private static final String CLIENTDISCONNECT_THREAD = "ClientDisconnectThread";	
 	private static final String SERVERCONNECT_THREAD = "ServerConnectThread";
-	private static final String CLIENTRESEARCH_THREAD = "ClientResearchThread";		//nome del thread ricerca risorse per il client
-	private static final String SERVERRESEARCH_THREAD = "ServerResearchThread";		//nome del thread ricerca risorse per il server
+	private static final String CLIENTRESEARCH_THREAD = "ClientResearchThread";				//nome del thread ricerca risorse per il client
+	private static final String SERVERRESEARCH_THREAD = "ServerResearchThread";				//nome del thread ricerca risorse per il server
 	private static final String SERVERRESEARCHANSWER_THREAD = "ServerResearchAnswerThread";
 	
 	//riferimenti alle componenti View e Model
@@ -213,6 +216,7 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 		Thread[] threadList = threadSet.toArray(new Thread[threadSet.size()]);
 		for(int i=0; i<threadList.length; i++)
 		{
+			//TODO aggiungere tutti i thread da spegnere
 			/*if(threadList[i].getName().startsWith(RICERCARISORSA_THREAD) ||
 			   threadList[i].getName().startsWith(DOWNLOADMANAGER_THREAD) ||
 			   threadList[i].getName().startsWith(DOWNLOADRESOURCEPART_THREAD) )			
@@ -548,8 +552,10 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 				}else{
 					model.removeClient(_client.getName());			//rimuovo il client	
 						
-					//TODO -> interrompere tutti i threads (ricerca) di questo client che vuole disconnettersi
-						
+					//interrompo tutti i threads (ricerca) di questo client che vuole disconnettersi
+					killThread(CLIENTRESEARCH_THREAD + "_" + _client.getName());
+					killThread(SERVERRESEARCHANSWER_THREAD + "_" + _client.getName());
+											
 					model.addLogText("il client " + _client.getName() + " si e' disconnesso!"); 	
 					DISCONNECTED_STATUS = true;
 				}
@@ -571,7 +577,7 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 	\****************************************************************************************/
 	public void findResourceForServer_answer(final DeviceClient _client, final Resource _risorsa, final Vector<DeviceClient> _clientList) throws RemoteException
 	{
-		(new Thread(SERVERRESEARCHANSWER_THREAD + "_" + _client.getName() + "_" + _risorsa.getName() + " " + _risorsa.getNparts()){
+		(new Thread(SERVERRESEARCHANSWER_THREAD + "_" + _client.getName() + "_" + _risorsa.getName() + "." + _risorsa.getNparts()){
 		
 			public void run(){
 				model.addResearchClientList(_client, _risorsa, _clientList);
@@ -580,7 +586,7 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 				if(model.getNumberOfRequests(_client, _risorsa) == 0)	//se ho ricevuto tutte le risposte
 				{
 					//interrompo il thread di ricerca
-					killThread(CLIENTRESEARCH_THREAD + "_" + _client.getName() + "_" + _risorsa.getName() + " " + _risorsa.getNparts());
+					killThread(CLIENTRESEARCH_THREAD + "_" + _client.getName() + "_" + _risorsa.getName() + "." + _risorsa.getNparts());
 				}
 			}//end run()
 			
@@ -593,19 +599,27 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 	\****************************************************************************************/
 	public void findResourceForServer(final DeviceServer _server, final Resource _risorsa, final DeviceClient _client) throws RemoteException
 	{
-		(new Thread(SERVERRESEARCH_THREAD + "_" + _server.getName() + "_" + _risorsa.getName() + " " + _risorsa.getNparts()){
+		(new Thread(SERVERRESEARCH_THREAD + "_" + _server.getName() + "_" + _risorsa.getName() + "." + _risorsa.getNparts()){
 		
 			public void run(){
 				if(VERBOSE_LOG)
-					model.addLogText("il server " + _server.getName() + " richiede ricerca di " + _risorsa.getName() + " " + _risorsa.getNparts());
+					model.addLogText("[serverSearch_T] il server " + _server.getName() + " richiede ricerca di " + _risorsa.getName() + " " + _risorsa.getNparts());
+				
+				try{
+					//simulo la ricerca delle risorse...
+					sleep(SEARCHSIMULATION_TIMEOUT);
+				}catch(InterruptedException ie){
+					
+				}
 				
 				//cerco tra i miei client locali se la risorsa e' presente
 				//e richiamo un metodo remoto al server che ha fatto la richiesta
 				try{
 					_server.getRef().findResourceForServer_answer(_client, _risorsa, model.getClientsOwnResourceList(_risorsa));
+					model.addLogText("[serverSearch_T] notifica risultato ricerca al server " + _server.getName() + " completata!");
 				}catch(Exception e){
 					if(VERBOSE_LOG)
-						model.addLogText("impossibile notificare il risultato ricerca al server " + _server.getName() + "!");
+						model.addLogText("[serverSearch_T] impossibile notificare il risultato ricerca al server " + _server.getName() + "!");
 				}
 			}//end run()
 		}).start(); //avvio il thread ricerca server		
@@ -617,12 +631,12 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 	\****************************************************************************************/
 	public void findResourceForClient(final DeviceClient _client, final Resource _risorsa) throws RemoteException
 	{
-		(new Thread(CLIENTRESEARCH_THREAD + "_" + _client.getName() + "_" + _risorsa.getName() + " " + _risorsa.getNparts()){
+		(new Thread(CLIENTRESEARCH_THREAD + "_" + _client.getName() + "_" + _risorsa.getName() + "." + _risorsa.getNparts()){
 		
 			public void run(){
 				
 				if(VERBOSE_LOG)
-					model.addLogText("il client " + _client.getName() + " richiede ricerca di " + _risorsa.getName() + " " + _risorsa.getNparts());
+					model.addLogText("[clientSearch_T] il client " + _client.getName() + " richiede ricerca di " + _risorsa.getName() + " " + _risorsa.getNparts());
 				
 				//aggiungo la richiesta in coda
 				model.addResearchRequest(_client, _risorsa);
@@ -630,7 +644,14 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 				//cerco tra i miei client locali se la risorsa e' presente ed aggiorno la coda richieste
 				model.addResearchClientList(_client, _risorsa, model.getClientsOwnResourceList(_risorsa));
 				
+				try{
+					sleep(SEARCHSIMULATION_TIMEOUT);
+				}catch(InterruptedException ie){
+					
+				}
+				
 				//ora inoltro la richiesta a tutti i server a cui sono collegato
+				model.addLogText("[clientSearch_T] inoltro richieste ai server in corso...");
 				DeviceServer server;
 				for(int i=0; i<model.getNservers(); i++)
 				{
@@ -641,7 +662,7 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 						//incremento il numero delle richieste inviate ai vari server
 						model.incrementNumberOfRequests(_client, _risorsa);						
 					}catch(Exception e){
-						model.addLogText("errore inoltro richiesta al server " + server.getName());
+						model.addLogText("[clientSearch_T] errore inoltro richiesta al server " + server.getName());
 					}
 				}	
 	
@@ -649,10 +670,12 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 				if(model.getNumberOfRequests(_client, _risorsa) > 0)
 				{
 					try{
-						sleep(10000);
-						model.addLogText("timout ricezione risposte dai server");
+						//attendo un timeout preimpostato, sperando di essere interrotto
+						//prima di esaurire il tempo
+						sleep(SERVERSREQUESTS_TIMEOUT);
+						model.addLogText("[clientSearch_T] timout ricezione risposte dai server");
 					}catch(InterruptedException ie){
-						model.addLogText("ricevute tutte le risposte dai server");
+						model.addLogText("[clientSearch_T] ricevute tutte le risposte dai server");
 					}		
 				}
 			
@@ -660,7 +683,7 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 				try{
 					_client.getRef().findResourceForClient_answer(_risorsa, model.getResearchClientList(_client,_risorsa));
 				}catch(Exception e){
-					model.addLogText("impossibile notificare la lista clients...");
+					model.addLogText("[clientSearch_T] impossibile notificare la lista clients...");
 				}
 
 			}//end run()
