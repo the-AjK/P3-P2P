@@ -478,8 +478,15 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 	{
 		if(_youareconnected)
 		{
-			model.addLogText("connessione al server " + _server2connect.getName() + " completata!");
-			model.addServer(_server2connect);		//aggiorno l'interfaccia grafica
+			//controllo che non sia gia' connesso
+			if(model.serverIsHere(_server2connect.getName()))
+			{
+				if(VERBOSE_LOG)
+					model.addLogText("il server " + _server2connect.getName() + " e' gia' connesso!");
+			}else{
+				model.addLogText("connessione al server " + _server2connect.getName() + " completata!");
+				model.addServer(_server2connect);		//aggiorno l'interfaccia grafica
+			}
 		}else{
 			model.addLogText("connessione al server " + _server2connect.getName() + " fallita!");
 		}
@@ -666,7 +673,7 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 					}
 				}	
 	
-				//se il numero di richieste è maggiore di zero, aspetto la risposta...
+				//se il numero di richieste e' maggiore di zero, aspetto la risposta...
 				if(model.getNumberOfRequests(_client, _risorsa) > 0)
 				{
 					try{

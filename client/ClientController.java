@@ -237,7 +237,15 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 				ref.findResourceForClient(model.me(), risorsaDaCercare);	//richiamo il metodo remoto per inoltrare la richiesta al server
 			}catch(Exception e){
 				model.addLogText("[ricerca_T] impossibile comunicare con il server!");
-			}							
+			}	
+				
+			try{
+				//tengo vivo il thread per un po' di tempo cosi posso controllare
+				//quante e quali richieste sono attive ed in attesa di risposta.
+				sleep(10000);
+			}catch(InterruptedException ie){
+				//non faccio nulla
+			}
 		}//end run()
 		
 	}//class RicercaRisorsaThread
@@ -567,6 +575,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 			{
 				model.addLogText("[input_err] inserisci nome risorsa!");		//manca il nome della risorsa da cercare
 				view.setFindText("");
+				model.setFindBenabled(true);
 				return;
 			} 	
 			
@@ -576,6 +585,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 			{
 				model.addLogText("[input_err] nome risorsa incompleto o errato!");	//manca il numero di parti della risorsa da cercare
 				view.setFindText(nomeRisorsa);
+				model.setFindBenabled(true);
 				return;
 			} 
 
@@ -591,11 +601,13 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 			}catch(NumberFormatException nfe)
 			{
 				model.addLogText("[input_err] formato numerico parti risorsa errato!");
+				model.setFindBenabled(true);
 				return;
 			}
 			if(partiRisorsa <= 0)
 			{
 				model.addLogText("[input_err] impossibile cercare risorse vuote!");
+				model.setFindBenabled(true);
 				return;
 			}					
 			
@@ -605,14 +617,24 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 			if(model.resourceIsHere(nomeRisorsa,partiRisorsa))
 			{
 				model.addLogText("[input_err] risorsa gia' presente!");
+				model.setFindBenabled(true);
 				return;
 			}				
 			if(model.resourceIsDownloading(nomeRisorsa,partiRisorsa))
 			{
 				model.addLogText("[input_err] risorsa gia' in coda download!");
+				model.setFindBenabled(true);
 				return;
-			}				
-					
+			}			
+
+			//controllo di non aver già inviato una richiesta di ricerca al mio server
+			if(getThread(RICERCARISORSA_THREAD + "_" + nomeRisorsa + "_" + partiRisorsa) != null)
+			{
+				model.addLogText("[input_err] richiesta ricerca risorsa gia' inviata!");
+				model.setFindBenabled(true);
+				return;
+			}
+			
 			//ora che tutto torna creo il thread di ricerca, lo avvio ed esco!
 			(new RicercaRisorsaThread(nomeRisorsa,partiRisorsa)).start();
 			
