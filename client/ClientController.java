@@ -370,25 +370,28 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 								
 								synchronized(downloadManager_lock)
 								{
-									if(activeDownloads < model.getDownloadCapacity() &&
-										listaClient.size() > activeClients.size()	)	//vedo se posso scaricare
+									for(int j=activeDownloads; j<model.getDownloadCapacity(); j++)
 									{
-										synchronized(risorsa)
+										if(listaClient.size() > activeClients.size())	//vedo se ci sono clients disponibili
 										{
-											parte = getRandomParte(risorsa);
-											clientPos = getRandomClient(listaClient); 		//prendo un client random
-											if(clientPos >= 0 && parte>=0)
+											synchronized(risorsa)
 											{
-												client = listaClient.get(clientPos);
-												risorsa.setPartInDownload(parte);							//setto come in download
-												activeDownloads++;
-												activeClients.add(client);
-												//avvio un thread di download per la parte di risorsa
-												(new DownloadResourcePartThread(risorsa, parte, listaClient, clientPos)).start();						
+												parte = getRandomParte(risorsa);
+												clientPos = getRandomClient(listaClient); 		//prendo un client random
+												if(clientPos >= 0 && parte>=0)
+												{
+													client = listaClient.get(clientPos);
+													activeClients.add(client);
+													activeDownloads++;
+													risorsa.setPartInDownload(parte);			//setto come in download
+																										
+													//avvio un thread di download per la parte di risorsa
+													(new DownloadResourcePartThread(risorsa, parte, listaClient, clientPos)).start();						
+												}
 											}
+										}else{
+											//nessun client disponibile
 										}
-									}else{
-										//model.addLogText("[download_T] limite download raggiunto, in attesa...");
 									}
 								}//end synch
 							} //end if	
@@ -963,7 +966,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 	\****************************************************************************************/
 	public boolean downloadStop(final Resource _risorsa,final int _parte, final DeviceClient _client) throws RemoteException
 	{
-		model.addLogText("[downloadP_T] download in terminazione...");
+		model.addLogText("[downloadP_T] download " +  _risorsa.getName() + "." + _parte + " in terminazione...");
 		killThread(DOWNLOADRESOURCEPART_THREAD + "_" + _risorsa.getName() + "." + _parte);
 		return true;
 	}	
