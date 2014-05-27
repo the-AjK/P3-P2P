@@ -33,6 +33,8 @@ public class ClientModel extends java.util.Observable
 	private String animationIcon;							//piccola icona di animazione per visualizzare lo stato del client
 	
 	//lock espliciti per la lista log, la coda download e della mia lista risorse
+	//visto che molti thread usufruiscono di questi metodi per eseguire operazioni sui dati del model
+	//evito l'accesso e la modifica dei dati in modo concorrente
 	private Object log_lock;
 	private Object downloadQueue_lock;
 	private Object risorse_lock;
@@ -167,15 +169,7 @@ public class ClientModel extends java.util.Observable
 	|	public Vector<ResourceDownloadQueue> getDownloadQueue()
 	|	description: restituisce la coda di download
 	\****************************************************************************************/
-	public Vector<ResourceDownloadQueue> getDownloadQueue()
-	{
-		Vector<ResourceDownloadQueue> coda;
-		synchronized(downloadQueue_lock)
-		{
-			coda = downloadQueue;
-		}
-		return coda;
-	}
+	public Vector<ResourceDownloadQueue> getDownloadQueue(){return downloadQueue;}
 	
 	/****************************************************************************************\
 	|	public int getNdownloadQueue()
@@ -212,7 +206,8 @@ public class ClientModel extends java.util.Observable
 	{
 		synchronized(downloadQueue_lock)
 		{
-			downloadQueue.remove(_n);
+			if(_n < downloadQueue.size())
+				downloadQueue.remove(_n);
 		}
 		viewRefresh();
 	}
@@ -267,13 +262,23 @@ public class ClientModel extends java.util.Observable
 	{
 		String res = "[ limite parti in download = " + downloadCapacity + " ]\n\n";
 		Integer nparti=0;
+		Vector<DeviceClient> listaClient;
 		
 		synchronized(downloadQueue_lock)
 		{
 			for(int i=0; i<downloadQueue.size(); i++)
 			{
 				nparti = downloadQueue.get(i).risorsa.getNparts();
-				res = res + "risorsa [" + downloadQueue.get(i).risorsa.getName() + " " + nparti + "] {\n";
+				res = res + "risorsa [" + downloadQueue.get(i).risorsa.getName() + " " + nparti + "] (";
+		
+				//aggiungo la lista di clients che possiedono questa risorsa
+				listaClient = downloadQueue.get(i).listaClient;
+				for(int j=0; j<listaClient.size(); j++)
+				{
+					if(j > 0) res = res + ", ";
+					res = res + listaClient.get(j).getName();
+				}
+				res = res + ") {\n";
 				
 				for(int j=0; j<nparti; j++)
 				{
@@ -286,10 +291,10 @@ public class ClientModel extends java.util.Observable
 						{
 							res = res + "[ ] download fallito!\n";
 						}else{
-							res = res + "[ ] in download...\n";
+							res = res + "[ ] download da " + downloadQueue.get(i).risorsa.getClientInUpload(j).getName() + "...\n";
 						}
 					}else if(downloadQueue.get(i).risorsa.isPartFull(j)){
-						res = res + "[*] done!\n";
+						res = res + "[*] download da " + downloadQueue.get(i).risorsa.getClientInUpload(j).getName() + " terminato!\n";
 					}else{
 						res = res + "--- \n";  //unknow status ! :(
 					}

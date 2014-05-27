@@ -658,7 +658,9 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 				}
 				
 				//ora inoltro la richiesta a tutti i server a cui sono collegato
-				model.addLogText("[clientSearch_T] inoltro richieste ai server in corso...");
+				if(model.getNservers() > 0)
+					model.addLogText("[clientSearch_T] inoltro richieste ai server in corso...");
+					
 				DeviceServer server;
 				for(int i=0; i<model.getNservers(); i++)
 				{
@@ -687,11 +689,13 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 				}
 			
 				//notifico il client con la lista risorse
+				model.addLogText("[clientSearch_T] ricerca terminata, notifico i risultati al client " + _client.getName() + "...");
 				try{
 					_client.getRef().findResourceForClient_answer(_risorsa, model.getResearchClientList(_client,_risorsa));
+					model.addLogText("[clientSearch_T] notifica al client " + _client.getName() + " terminata.");
 				}catch(Exception e){
-					model.addLogText("[clientSearch_T] impossibile notificare la lista clients...");
-				}
+					model.addLogText("[clientSearch_T] impossibile notificare la lista clients al client " + _client.getName() + "!");
+				}				
 
 			}//end run()
 		}).start(); //avvio il thread ricerca client	

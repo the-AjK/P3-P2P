@@ -27,6 +27,7 @@ public class Resource implements Serializable
 		public boolean status_OK;					//stato generale della parte
 		public boolean file_header;					//l'header viene scritto ad inizio download
 		public int file_body;						//per poi finire con la scrittura del body che indica il download completo
+		public DeviceClient clientInUpload;			//client che sta fornendo la parte di risorsa durante la fase di download 
 		
 		public Vector<DeviceClient> logDownload;	//ogni parte di risorsa ha un log download che indica
 													//quanti e quali clients l'hanno scaricata
@@ -79,15 +80,17 @@ public class Resource implements Serializable
 	|	public Vector<DeviceClient> getLogDownload(int _parteRisorsa)
 	|	description: restituisce la lista di clients che hanno scaricato una determinata parte
 	\****************************************************************************************/
-	public Vector<DeviceClient> getLogDownload(int _parteRisorsa){
+	public Vector<DeviceClient> getLogDownload(int _parteRisorsa)
+	{
 		return partiRisorsa.get(_parteRisorsa).logDownload;
 	}
 	
 	/****************************************************************************************\
-	|	public Vector<DeviceClient> getLogDownload(int i)
-	|	description: restituisce la lista di clients che hanno scaricato una determinata parte
+	|	public void addLogDownload(DeviceClient _client, int _parteRisorsa)
+	|	description: aggiunge un client al log download
 	\****************************************************************************************/
-	public void addLogDownload(DeviceClient _client, int _parteRisorsa){
+	public void addLogDownload(DeviceClient _client, int _parteRisorsa)
+	{
 		partiRisorsa.get(_parteRisorsa).logDownload.add(_client);
 	}
 	
@@ -204,13 +207,23 @@ public class Resource implements Serializable
 	}
 	
 	/****************************************************************************************\
-	|	public void setPartInDownload(int _n)
-	|	description: setta la parte di risorsa indicata come in download
+	|	public void setPartInDownload(int _n, DeviceClient _client)
+	|	description: setta la parte di risorsa indicata come in download da un determinato client
 	\****************************************************************************************/
-	public void setPartInDownload(int _n)
+	public void setPartInDownload(int _n, DeviceClient _client)
 	{
+		partiRisorsa.get(_n).clientInUpload = _client;
 		partiRisorsa.get(_n).file_header = PART_HEADER_FULL;
 		partiRisorsa.get(_n).file_body = PART_BODY_EMPTY;
+	}
+	
+	/****************************************************************************************\
+	|	public DeviceClient getClientInUpload(int _n)
+	|	description: restituisce il client che fornisce la parte di risorsa nella fase di download
+	\****************************************************************************************/
+	public DeviceClient getClientInUpload(int _n)
+	{
+		return partiRisorsa.get(_n).clientInUpload;
 	}
 	
 	/****************************************************************************************\

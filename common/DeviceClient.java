@@ -20,6 +20,7 @@ public class DeviceClient implements Serializable
 	private String nomeClient;			//nome del client
 	private IClient ref;				//riferimento remoto del client
 	private Vector<Resource> risorse;	//lista di risorse del client
+	private boolean inUpload;			//flag che indica se il client è in upload
 	
 	/****************************************************************************************\
 	|	public DeviceClient()
@@ -38,6 +39,7 @@ public class DeviceClient implements Serializable
 	{
 		nomeClient = _nomeClient;
 		ref = _ref;	
+		inUpload = false; 
 		if(_risorse == null)
 		{
 			risorse = new Vector<Resource>();
@@ -45,6 +47,21 @@ public class DeviceClient implements Serializable
 			risorse = _risorse;
 		}
 	}
+	
+	/****************************************************************************************\
+	|	public void setInUpload(boolean _status)
+	|	description: imposta lo stato di upload del client
+	\****************************************************************************************/
+	public void setInUpload(boolean _status)
+	{
+		inUpload = _status;
+	}
+	
+	/****************************************************************************************\
+	|	public boolean isInUpload()
+	|	description: restituisce lo stato del client in upload
+	\****************************************************************************************/
+	public boolean isInUpload(){return inUpload;}
 	
 	/****************************************************************************************\
 	|	public String getName()
