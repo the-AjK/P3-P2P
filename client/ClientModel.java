@@ -199,6 +199,27 @@ public class ClientModel extends java.util.Observable
 	}
 	
 	/****************************************************************************************\
+	|	public void downloadQueueSetFailPart(Resource _risorsa, int _nParte)
+	|	description: setta una parte di risorsa come fallita
+	\****************************************************************************************/
+	public void downloadQueueSetFailPart(Resource _risorsa, int _nParte)
+	{
+		synchronized(downloadQueue_lock)
+		{
+			for(int i=0; i<downloadQueue.size(); i++)
+			{
+				if(	downloadQueue.get(i).risorsa.getName().equals(_risorsa.getName()) &&
+					downloadQueue.get(i).risorsa.getNparts() == _risorsa.getNparts() )
+				{
+					downloadQueue.get(i).risorsa.setFailPart(_nParte);
+					break;
+				}
+			}
+		}		
+		viewRefresh();
+	}
+	
+	/****************************************************************************************\
 	|	public void removeResourceInDownload(int _n)
 	|	description: rimuove una risorsa in download
 	\****************************************************************************************/
@@ -289,9 +310,9 @@ public class ClientModel extends java.util.Observable
 					}else if(downloadQueue.get(i).risorsa.isPartInDownload(j)){
 						if(!downloadQueue.get(i).risorsa.partIsOK(j))
 						{
-							res = res + "[ ] download fallito!\n";
+							res = res + "[ ] download da " + downloadQueue.get(i).risorsa.getClientInUpload(j).getName() + " fallito!\n";
 						}else{
-							res = res + "[ ] download da " + downloadQueue.get(i).risorsa.getClientInUpload(j).getName() + "...\n";
+							res = res + "[ ] download da " + downloadQueue.get(i).risorsa.getClientInUpload(j).getName() + " in corso...\n";
 						}
 					}else if(downloadQueue.get(i).risorsa.isPartFull(j)){
 						res = res + "[*] download da " + downloadQueue.get(i).risorsa.getClientInUpload(j).getName() + " terminato!\n";
