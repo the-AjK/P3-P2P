@@ -351,7 +351,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 												if(!risorsa.isPartFull(k) && !risorsa.isPartInDownload(k))
 												{	
 													parte = k;
-													break; //se la parte è vuota esco
+													break; //se la parte e' vuota esco
 												}
 											}											
 											
@@ -551,7 +551,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 			Resource risorsa = model.getResourceInDownload(i);
 			for(int j=0; j<risorsa.getNparts(); j++)
 			{
-				if(risorsa.isPartInDownload(j)) //se la parte è in download la segnalo come fallita
+				if(risorsa.isPartInDownload(j)) //se la parte e' in download la segnalo come fallita
 					model.downloadQueueSetFailPart(i,j);
 			}
 		}

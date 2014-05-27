@@ -20,7 +20,7 @@ public class DeviceClient implements Serializable
 	private String nomeClient;			//nome del client
 	private IClient ref;				//riferimento remoto del client
 	private Vector<Resource> risorse;	//lista di risorse del client
-	private boolean inUpload;			//flag che indica se il client è in upload
+	private boolean inUpload;			//flag che indica se il client e' in upload
 	
 	/****************************************************************************************\
 	|	public DeviceClient()
