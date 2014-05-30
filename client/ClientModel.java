@@ -306,7 +306,12 @@ public class ClientModel extends java.util.Observable
 					res = res + "   |--> pt." + j + " ";
 					
 					if(downloadQueue.get(i).risorsa.isPartEmpty(j)){
-						res = res + "_ \n";
+						if(!downloadQueue.get(i).risorsa.partIsOK(j))
+						{
+							res = res + "[ ] download fallito!\n";
+						}else{
+							res = res + "_ \n";
+						}
 					}else if(downloadQueue.get(i).risorsa.isPartInDownload(j)){
 						if(!downloadQueue.get(i).risorsa.partIsOK(j))
 						{

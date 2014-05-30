@@ -515,8 +515,9 @@ public class ServerModel extends java.util.Observable
 	public void addServer(DeviceServer _server)
 	{
 		synchronized(servers_lock)
-		{
-			servers.add(_server);
+		{	
+			if(!serverIsHere(_server.getName()))
+				servers.add(_server);
 		}
 		viewRefresh();
 	}

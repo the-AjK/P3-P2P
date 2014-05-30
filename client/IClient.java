@@ -35,10 +35,10 @@ public interface IClient extends Remote
 	public Vector<Resource> getResourceList() throws RemoteException;
 	
 	/****************************************************************************************\
-	|	public void connectMEClient_answer(DeviceServer _server, boolean _youareconnected)
+	|	public void connectMEClient_answer(DeviceServer _server, boolean _youareconnected, boolean _statoNotificaRisorse)
 	|	description: utilizzato dai server per confermare la richiesta di connessione del client
 	\****************************************************************************************/
-	public void connectMEClient_answer(DeviceServer _server, boolean _youareconnected) throws RemoteException;
+	public void connectMEClient_answer(DeviceServer _server, boolean _youareconnected, boolean _statoNotificaRisorse) throws RemoteException;
 	
 	/****************************************************************************************\
 	|	public void disconnectMEClient_answer(DeviceServer _server, boolean _youaredisconnected)

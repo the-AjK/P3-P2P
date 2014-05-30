@@ -321,22 +321,27 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 		}
 		
 		IServer ref = null;
-		for(int i=0; i<serverNamesList.length; i++)
+		synchronized(model.getServerList())													//sincronizzo sulla lista server
 		{
-			//controllo se contiene il TAG
-			if(serverNamesList[i].contains(RMITAG + "/"))
+			for(int i=0; i<serverNamesList.length; i++)
 			{
-				String server2connect = rmitag2name(RMITAG, serverNamesList[i]); 		//recupero il nome del server a cui voglio connettermi
-				if(server2connect.equals(model.getServerName()))continue;				//evito di connettermi a me stesso :) 
-				model.addLogText("invio richiesta connessione al server " + server2connect + "...");
-				try{
-					ref = serverLookup(server2connect);									//recupero il riferimento a tale server
-					ref.connectMEServer(model.me());									//richiedo di connettermi al server
-				}catch(Exception e){
-					model.addLogText("connessione al server " + server2connect + " fallita");
-					e.printStackTrace();
-				}
-			}			
+				//controllo se contiene il TAG
+				if(serverNamesList[i].contains(RMITAG + "/"))
+				{
+					String server2connect = rmitag2name(RMITAG, serverNamesList[i]); 		//recupero il nome del server a cui voglio connettermi
+					if(	server2connect.equals(model.getServerName()) || 					//evito di connettermi a me stesso :)
+						model.serverIsHere(server2connect) )								//e controllo che il server non sia già connesso
+							continue;														 
+					model.addLogText("invio richiesta connessione al server " + server2connect + "...");
+					try{
+						ref = serverLookup(server2connect);									//recupero il riferimento a tale server
+						ref.connectMEServer(model.me());									//richiedo di connettermi al server
+					}catch(Exception e){
+						model.addLogText("connessione al server " + server2connect + " fallita");
+						e.printStackTrace();
+					}
+				}			
+			}
 		}
 		int serverTrovati = serverNamesList.length;
 		if(serverTrovati > 0) serverTrovati--;				//rimuovo me stesso
@@ -459,6 +464,7 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 					}
 				}
 				
+				
 				try{
 					_server.getRef().connectMEServer_answer(model.me(), CONNECTED_STATUS); //rispondo al server
 				}catch(Exception e){
@@ -478,15 +484,18 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 	{
 		if(_youareconnected)
 		{
-			//controllo che non sia gia' connesso
-			if(model.serverIsHere(_server2connect.getName()))
+			synchronized(model.getServerList())													//sincronizzo sulla lista server
 			{
-				if(VERBOSE_LOG)
-					model.addLogText("il server " + _server2connect.getName() + " e' gia' connesso!");
-			}else{
-				model.addLogText("connessione al server " + _server2connect.getName() + " completata!");
-				model.addServer(_server2connect);		//aggiorno l'interfaccia grafica
-			}
+				//controllo che non sia gia' connesso
+				if(model.serverIsHere(_server2connect.getName()))
+				{
+					if(VERBOSE_LOG)
+						model.addLogText("il server " + _server2connect.getName() + " e' gia' connesso!");
+				}else{
+					model.addLogText("connessione al server " + _server2connect.getName() + " completata!");
+					model.addServer(_server2connect);		//aggiorno l'interfaccia grafica
+				}
+			}//synch
 		}else{
 			model.addLogText("connessione al server " + _server2connect.getName() + " fallita!");
 		}
@@ -529,7 +538,7 @@ public class ServerController extends UnicastRemoteObject implements IServer, Ac
 				CONNECTED_STATUS = true;
 				
 				try{
-					_client.getRef().connectMEClient_answer(model.me(), CONNECTED_STATUS);
+					_client.getRef().connectMEClient_answer(model.me(), CONNECTED_STATUS, !NEW_CLIENT);
 				}catch(Exception e){
 					if(VERBOSE_LOG)
 							model.addLogText("[newClient_T] impossibile notificare il client " + _client.getName() + "!");

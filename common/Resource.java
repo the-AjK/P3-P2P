@@ -104,7 +104,10 @@ public class Resource implements Serializable
 	|	public void setFailPart(int _parte)
 	|	description: setta la parte indicata come fallita
 	\****************************************************************************************/
-	public void setFailPart(int _parte){partiRisorsa.get(_parte).status_OK = false;}
+	public void setFailPart(int _parte)
+	{
+		partiRisorsa.get(_parte).status_OK = false;
+	}
 	
 	/****************************************************************************************\
 	|	public boolean isFull()
@@ -244,6 +247,7 @@ public class Resource implements Serializable
 	{
 		partiRisorsa.get(_n).file_header = PART_HEADER_EMPTY;
 		partiRisorsa.get(_n).file_body = PART_BODY_EMPTY;
+		partiRisorsa.get(_n).status_OK = true;
 	}
 
 } //end class Resource

@@ -30,9 +30,10 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 {
 	//impostazioni modificabili
 	private static final String HOST = "localhost:1099";					//host per la connessione RMI
-	private static final int DOWNLOAD_TIMEOUT = 6969;						//tempo per simulare il download di una parte di risorsa in ms
+	private static final int DOWNLOAD_TIMEOUT = 7000;						//tempo per simulare il download di una parte di risorsa in ms
+	private static final int DOWNLOAD_TIMEOUT_FAIL = 3000;					//tempo d'attesa per riprovare il download in caso di fallimento
 	private static final boolean VERBOSE_LOG = true;						//se true visualizza piu' messaggi di log
-	private static final boolean RICERCHE_MULTIPLE = false;					//abilita/disabilita ricerche multiple
+	private static final boolean RICERCHE_MULTIPLE = true;					//abilita/disabilita ricerche multiple mentre e' in corso un download
 	
 	//impostazioni NON modificabili
 	private static final int CHECKCONNECTIONS_TIMEOUT = 3000;				//timeout per controllo connessione in background in ms
@@ -268,16 +269,13 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 	private class DownloadManagerThread extends Thread
 	{
 		private int activeDownloads;				//numero di download attivi
-		//private Vector<DeviceClient> activeClients;	//lista di clients attivi (in upload)
 		private Object downloadManager_lock;
-		
-		
+				
 		public DownloadManagerThread()
 		{
 			super(DOWNLOADMANAGER_THREAD);
 			downloadManager_lock = new Object();
 			activeDownloads = 0;
-			//activeClients = new Vector<DeviceClient>();
 		}
 		
 		public void run()
@@ -301,8 +299,8 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 								model.addLogText("[download_T] coda download vuota, in attesa...");
 							codaDownload_lock.wait();	
 						}
-					}					
-					
+					}				
+											
 					//scorro la lista delle risorse in download per vedere se ci sono parti da scaricare
 					synchronized(codaDownload_lock)
 					{
@@ -346,6 +344,16 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 								if(listaClient.size() == 0)
 								{
 									model.addLogText("[download_T] nessun client disponibile per la risorsa " + risorsa.getName() + "_" + risorsa.getNparts() + "!");
+									//imposto tutte le parti come fallite
+									for(int j=0; j<risorsa.getNparts(); j++)
+										model.downloadQueueSetFailPart(risorsa,j);
+									model.addLogText("[download_T] elimino il download in coda per la risorsa " + risorsa.getName() + "_" + risorsa.getNparts() + "!");
+									sleep(DOWNLOAD_TIMEOUT);
+									synchronized(codaDownload_lock)
+									{
+										model.removeResourceInDownload(i);	//rimuovo la risorsa dalla coda download
+									}
+									break;
 								}
 								
 								for(int j=activeDownloads; j<model.getDownloadCapacity(); j++)
@@ -432,6 +440,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 			private Resource risorsa;
 			private int parte;
 			private DeviceClient client;
+			private String clientName;
 			private Vector<DeviceClient> listaClient;
 			private int clientPos;
 			
@@ -443,6 +452,24 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 				listaClient = _listaClient;
 				clientPos = _clientPos;
 				client = listaClient.get(clientPos);
+				clientName = client.getName();
+			}
+			
+			private int getPos(String _clientName)
+			{
+				int pos = -1;
+				synchronized(downloadManager_lock)
+				{
+					for(int i=0; i<listaClient.size(); i++)
+					{
+						if(listaClient.get(i).getName().equals(_clientName))
+						{
+							pos = i;
+							break;
+						}
+					}
+				}
+				return pos;
 			}
 			
 			public void run()
@@ -456,17 +483,30 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 						{
 							sleep(DOWNLOAD_TIMEOUT * 2);		//timeout download, spero di essere interrotto prima di finire il tempo					
 							model.addLogText("[downloadP_T] timeout! download " + risorsa.getName() + "_" + risorsa.getNparts() + "." + parte + " dal client " + client.getName() + " fallito!");
-							model.downloadQueueSetFailPart(risorsa,parte);
-							try{sleep(3000);}catch(Exception e){}
 							synchronized(downloadManager_lock)
 							{
+								model.downloadQueueSetFailPart(risorsa,parte);
+								try{sleep(DOWNLOAD_TIMEOUT_FAIL);}catch(Exception e){}
 								risorsa.setPartEmpty(parte);	//reimposto la risorsa come vuota
 								model.viewRefresh();
-								listaClient.remove(clientPos);
+								clientPos = getPos(clientName);
+								listaClient.remove(clientPos); //tolgo il client fallito
+								activeDownloads--;
 							}
+							
 						}else{
 							//il client non ha accettato la richiesta di download
 							model.addLogText("[downloadP_T] download " + risorsa.getName() + "_" + risorsa.getNparts() + "." + parte + " fallito!");
+							synchronized(downloadManager_lock)
+							{
+								model.downloadQueueSetFailPart(risorsa,parte);
+								try{sleep(DOWNLOAD_TIMEOUT_FAIL);}catch(Exception e){}
+								risorsa.setPartEmpty(parte);	//reimposto la risorsa come vuota
+								model.viewRefresh();
+								clientPos = getPos(clientName);
+								listaClient.remove(clientPos); //tolgo il client fallito
+								activeDownloads--;
+							}
 						}
 								
 					}catch(RemoteException re){
@@ -476,7 +516,9 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 						{
 							risorsa.setPartEmpty(parte);	//reimposto la risorsa come vuota
 							model.viewRefresh();
+							clientPos = getPos(clientName);
 							listaClient.remove(clientPos);
+							activeDownloads--;
 						}
 					}		
 					
@@ -491,9 +533,10 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 						{
 							model.addLogText("[downloadP_T] download " + risorsa.getName() + "_" + risorsa.getNparts() + "." + parte + " completato!");
 							risorsa.setPartFull(parte);				//setto la parte come completata
-							model.viewRefresh();
+							clientPos = getPos(clientName);
 							listaClient.get(clientPos).setInUpload(false); //il client ha finito il suo upload
 							activeDownloads--;
+							model.viewRefresh();
 						}
 					}else{
 						//altrimenti e' avvenuta una disconnessione manuale del client, oppure causata da qualche
@@ -501,13 +544,14 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 						synchronized(downloadManager_lock)
 						{
 							model.addLogText("[downloadP_T] download " + risorsa.getName() + "_" + risorsa.getNparts() + "." + parte + " fallito!");
+							clientPos = getPos(clientName);
 							listaClient.get(clientPos).setInUpload(false); //il client ha finito il suo upload
 							activeDownloads--;
 						}
 					}
 				}
 				catch(Exception e){
-					model.addLogText("[downloadP_T] interrupted exception durante attesa lock!");
+					model.addLogText("[downloadP_T] interrupted exception durante attesa!");
 				}
 				finally{
 				
@@ -894,22 +938,27 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 	}
 	
 	/****************************************************************************************\
-	|	public void connectMEClient_answer(DeviceServer _server, boolean _youareconnected)
+	|	public void connectMEClient_answer(DeviceServer _server, boolean _youareconnected, boolean _statoNotificaRisorse)
 	|	description: implementazione del metodo remoto dell'interfaccia IClient
 	\****************************************************************************************/
-	public void connectMEClient_answer(DeviceServer _server, boolean _youareconnected) throws RemoteException
+	public void connectMEClient_answer(DeviceServer _server, boolean _youareconnected, boolean _statoNotificaRisorse) throws RemoteException
 	{
 		if(_youareconnected)
 		{
-			model.setDisconnectBtext(DISCONNECT_BUTTON_TEXT);	//permetto la disconnessione
-			model.setFindBenabled(true);						//abilito la ricerca
-			model.setLogColor(Color.BLUE);						//testo LOG in blu
-			model.addLogText("stato comunicazione con il server " + _server.getName() + ": ok!");
-			//view.setFindText("");								//resetto la barra di ricerca
-			//svuoto la coda download
-			model.cleanDownloadQueue();
-			downloadManager = new DownloadManagerThread();		//creo ed avvio un nuovo thread di download
-			downloadManager.start();	
+			if(_statoNotificaRisorse)	//se e' la risposta alla notifica risorse post-download
+			{
+				model.addLogText("comunicazione nuova lista risorse al server " + _server.getName() + " completata!");			
+			}else{	//altrimenti mi sono appena connesso
+				model.setDisconnectBtext(DISCONNECT_BUTTON_TEXT);	//permetto la disconnessione
+				model.setFindBenabled(true);						//abilito la ricerca
+				model.setLogColor(Color.BLUE);						//testo LOG in blu
+				model.addLogText("stato comunicazione con il server " + _server.getName() + ": ok!");
+				//view.setFindText("");								//resetto la barra di ricerca
+				//svuoto la coda download
+				model.cleanDownloadQueue();
+				downloadManager = new DownloadManagerThread();		//creo ed avvio un nuovo thread di download
+				downloadManager.start();	
+			}
 			SERVER_OK = true;
 		}else{
 			model.setDisconnectBtext(CONNECT_BUTTON_TEXT);		//permetto la connessione
@@ -969,6 +1018,11 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 	\****************************************************************************************/
 	public boolean downloadStart(final Resource _risorsa,final int _parte, final DeviceClient _client) throws RemoteException
 	{
+		if(	model.getDisconnectBtext().equals(CONNECT_BUTTON_TEXT) || 
+			( model.getDisconnectBtext().equals(DISCONNECT_BUTTON_TEXT) && model.getDisconnectBenabled() == false) )
+		{	
+			return false; //se mi sto disconnettendo rifiuto la richiesta di download
+		}		
 		(new Thread(UPLOADRESOURCEPART_THREAD + "_" + _risorsa + "." + _parte){
 			public void run()
 			{
