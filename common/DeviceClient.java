@@ -22,6 +22,8 @@ public class DeviceClient implements Serializable
 	private Vector<Resource> risorse;	//lista di risorse del client
 	private boolean inUpload;			//flag che indica se il client e' in upload
 	
+	//private Object risorse_lock;
+	
 	/****************************************************************************************\
 	|	public DeviceClient()
 	|	description: costruttore senza parametri
@@ -46,6 +48,7 @@ public class DeviceClient implements Serializable
 		}else{
 			risorse = _risorse;
 		}
+		//risorse_lock = new Object();
 	}
 	
 	/****************************************************************************************\
@@ -81,11 +84,14 @@ public class DeviceClient implements Serializable
 	\****************************************************************************************/
 	synchronized public void addLogDownload(DeviceClient _client, Resource _risorsa, int _parteRisorsa)
 	{
-		for(int i=0; i<risorse.size(); i++)
+		//synchronized(risorse_lock)
 		{
-			if( risorse.get(i).getName().equals(_risorsa.getName()) &&
-				risorse.get(i).getNparts() == _risorsa.getNparts() )
-					risorse.get(i).addLogDownload(_client, _parteRisorsa);			
+			for(int i=0; i<risorse.size(); i++)
+			{
+				if( risorse.get(i).getName().equals(_risorsa.getName()) &&
+					risorse.get(i).getNparts() == _risorsa.getNparts() )
+						risorse.get(i).addLogDownload(_client, _parteRisorsa);			
+			}
 		}
 	}
 	
@@ -105,7 +111,15 @@ public class DeviceClient implements Serializable
 	|	public int getNresource()
 	|	description: restituisce il numero di risorse del client
 	\****************************************************************************************/
-	public int getNresource(){return risorse.size();}
+	public int getNresource()
+	{
+		int size;
+		//synchronized(risorse_lock)
+		{
+			size = risorse.size();
+		}
+		return size;
+	}
 	
 	/****************************************************************************************\
 	|	public Resource getResource(int nrisorsa)
@@ -113,20 +127,39 @@ public class DeviceClient implements Serializable
 	\****************************************************************************************/
 	public Resource getResource(int _nrisorsa)
 	{
-		return risorse.get(_nrisorsa);
+		Resource r;
+		//synchronized(risorse_lock)
+		{
+			r = risorse.get(_nrisorsa);
+		}
+		return r;
 	}
 	
 	/****************************************************************************************\
 	|	public Vector<Resource> getResourceList()
 	|	description: restituisce la lista di risorse
 	\****************************************************************************************/
-	public Vector<Resource> getResourceList(){return risorse;}
+	public Vector<Resource> getResourceList()
+	{
+		Vector<Resource> r;
+		//synchronized(risorse_lock)
+		{
+			r = risorse;
+		}
+		return r;
+	}
 	
 	/****************************************************************************************\
 	|	public void setResourceList()
-	|	description: restituisce la lista di risorse
+	|	description: setta la lista di risorse
 	\****************************************************************************************/
-	public void setResourceList(Vector<Resource> _r){risorse = _r;}
+	public void setResourceList(Vector<Resource> _r)
+	{
+		//synchronized(risorse_lock)
+		{
+			risorse = _r;
+		}
+	}
 	
 	/****************************************************************************************\
 	|	public void addResource(Resource _r)
@@ -134,7 +167,10 @@ public class DeviceClient implements Serializable
 	\****************************************************************************************/
 	public void addResource(Resource _r)
 	{
-		risorse.add(_r);
+		//synchronized(risorse_lock)
+		{
+			risorse.add(_r);
+		}
 	}
 
 } //end class DeviceClient

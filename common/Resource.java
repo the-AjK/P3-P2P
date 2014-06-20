@@ -21,6 +21,8 @@ public class Resource implements Serializable
 	private static final boolean PART_HEADER_EMPTY = false;	
 	private static final int PART_BODY_FULL = 22;	
 	private static final int PART_BODY_EMPTY = 0;	
+		
+	private String logDownload_lock;
 	
 	private class ResourcePart implements Serializable
 	{												//contenuto informativo della parte di risorsa
@@ -62,6 +64,7 @@ public class Resource implements Serializable
 				partiRisorsa.add(new ResourcePart(PART_HEADER_EMPTY, PART_BODY_EMPTY));
 			}
 		}
+		logDownload_lock = new String("lock");
 	}
 	
 	/****************************************************************************************\
@@ -82,7 +85,12 @@ public class Resource implements Serializable
 	\****************************************************************************************/
 	public Vector<DeviceClient> getLogDownload(int _parteRisorsa)
 	{
-		return partiRisorsa.get(_parteRisorsa).logDownload;
+		Vector<DeviceClient> lista;
+		synchronized(logDownload_lock)
+		{
+			lista = partiRisorsa.get(_parteRisorsa).logDownload;
+		}
+		return lista;
 	}
 	
 	/****************************************************************************************\
@@ -91,7 +99,18 @@ public class Resource implements Serializable
 	\****************************************************************************************/
 	public void addLogDownload(DeviceClient _client, int _parteRisorsa)
 	{
-		partiRisorsa.get(_parteRisorsa).logDownload.add(_client);
+		synchronized(logDownload_lock)
+		{
+			Vector<DeviceClient> lista = partiRisorsa.get(_parteRisorsa).logDownload;
+			int count = 0;
+			for(int i=0; i<lista.size(); i++)
+			{
+				if(lista.get(i).getName().equals(_client.getName()))
+					count++;
+			}
+			if(count == 0)
+				partiRisorsa.get(_parteRisorsa).logDownload.add(_client);
+		}
 	}
 	
 	/****************************************************************************************\

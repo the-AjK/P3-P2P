@@ -241,7 +241,18 @@ public class ServerModel extends java.util.Observable
 	{
 		synchronized(requests_lock)
 		{
-			researchRequest.add(new ResearchRequest(_client,_risorsa));
+			int count = 0;
+			for(int i=0; i<researchRequest.size(); i++)
+			{
+				if(researchRequest.get(i).client.getName().equals(_client.getName()) &&
+					researchRequest.get(i).risorsa.getName().equals(_risorsa.getName()) &&
+					researchRequest.get(i).risorsa.getNparts() == _risorsa.getNparts()
+				){
+					count++;
+				}
+			}	
+			if(count == 0)
+				researchRequest.add(new ResearchRequest(_client,_risorsa));
 		}
 	}
 	
@@ -282,7 +293,7 @@ public class ServerModel extends java.util.Observable
 					researchRequest.get(i).risorsa.getName().equals(_risorsa.getName()) &&
 					researchRequest.get(i).risorsa.getNparts() == _risorsa.getNparts()
 				){
-					clients.addAll(researchRequest.get(i).clientList);
+					clients = researchRequest.get(i).clientList;
 					break;
 				}
 			}	
@@ -304,7 +315,20 @@ public class ServerModel extends java.util.Observable
 					researchRequest.get(i).risorsa.getName().equals(_risorsa.getName()) &&
 					researchRequest.get(i).risorsa.getNparts() == _risorsa.getNparts()
 				){
-					researchRequest.get(i).clientList.addAll(_clients2add);
+					for(int j=0; j<_clients2add.size(); j++)
+					{
+						Vector<DeviceClient> lista = researchRequest.get(i).clientList;
+						int count = 0;
+						for(int k=0; k<lista.size(); k++)
+						{
+							if(_clients2add.get(j).getName().equals(lista.get(k).getName()))
+							{
+								count++;
+							}
+						}
+						if(count == 0)
+							researchRequest.get(i).clientList.add(_clients2add.get(j));
+					}
 					break;
 				}
 			}	

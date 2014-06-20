@@ -804,6 +804,7 @@ public class ClientController extends UnicastRemoteObject implements IClient, Ac
 				try{
 					ref.connectMEClient(model.me()); //invio la richiesta di connessione
 				}catch(Exception e){
+					e.printStackTrace();
 					model.addLogTextToLine(logPos," fallita!");
 					model.setDisconnectBtext(CONNECT_BUTTON_TEXT);			//permetto la connessione
 				}
